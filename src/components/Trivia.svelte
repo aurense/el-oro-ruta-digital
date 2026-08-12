@@ -8,12 +8,15 @@
 
     const dispatch = createEventDispatcher();
 
-    let intentosRestantes = 3;
+    const MAX_INTENTOS = 3;
+    let intentosRestantes = MAX_INTENTOS;
     let seleccionada: number | null = null;
     let resultado: "pendiente" | "correcta" | "fallida" = "pendiente";
     let bloqueada = false;
+    let sacudirIndice: number | null = null; // índice del botón a sacudir
 
     $: mostrarResultado = resultado !== "pendiente";
+    $: vidas = Array.from({ length: MAX_INTENTOS }, (_, i) => i < intentosRestantes);
 
     function getClaveHoy(): string {
         const hoy = new Date().toISOString().split("T")[0];
@@ -41,13 +44,17 @@
         if (bloqueada || resultado === "correcta") return;
         seleccionada = indice;
         const correcta = opciones[indice].correcta;
+
         if (correcta) {
             resultado = "correcta";
             bloqueada = true;
             guardarEstado();
-            console.log("[Trivia] Correcta, despachando success");
             dispatch("success");
         } else {
+            // Sacudir el botón incorrecto
+            sacudirIndice = indice;
+            setTimeout(() => (sacudirIndice = null), 500);
+
             intentosRestantes -= 1;
             if (intentosRestantes <= 0) {
                 resultado = "fallida";
@@ -61,84 +68,235 @@
     function guardarEstado() {
         localStorage.setItem(
             getClaveHoy(),
-            JSON.stringify({
-                intentosRestantes,
-                resultado,
-            }),
+            JSON.stringify({ intentosRestantes, resultado }),
         );
     }
 </script>
 
 <div class="trivia">
-    <h3>🎯 Trivia</h3>
-    <p>{pregunta}</p>
-    <div class="opciones">
+    <!-- Encabezado con vidas -->
+    <div class="trivia-header">
+        <h3 class="trivia-titulo">🎯 Trivia</h3>
+        <div class="vidas" aria-label="{intentosRestantes} intentos restantes">
+            {#each vidas as viva}
+                <span class="vida" class:perdida={!viva} aria-hidden="true">❤️</span>
+            {/each}
+        </div>
+    </div>
+
+    <!-- Tarjeta con la pregunta -->
+    <div class="pregunta-card">
+        <p class="pregunta-texto">{pregunta}</p>
+    </div>
+
+    <!-- Opciones -->
+    <div class="opciones" role="group" aria-label="Opciones de respuesta">
         {#each opciones as opcion, i}
             <button
-                class:selected={seleccionada === i}
+                class="opcion-btn"
                 class:correcta={resultado === "correcta" && opcion.correcta}
-                class:incorrecta={resultado === "fallida" &&
-                    seleccionada === i &&
-                    !opcion.correcta}
-                disabled={bloqueada || resultado === "correcta"}
+                class:incorrecta={seleccionada === i && !opcion.correcta && resultado !== "correcta"}
+                class:sacudir={sacudirIndice === i}
+                class:desactivada={bloqueada && !(resultado === "correcta" && opcion.correcta)}
+                disabled={bloqueada}
                 on:click={() => elegirOpcion(i)}
             >
-                {opcion.texto}
+                <span class="opcion-letra">{String.fromCharCode(65 + i)}</span>
+                <span class="opcion-texto">{opcion.texto}</span>
+                {#if resultado === "correcta" && opcion.correcta}
+                    <span class="opcion-icono">✓</span>
+                {:else if seleccionada === i && !opcion.correcta && resultado !== "pendiente"}
+                    <span class="opcion-icono">✕</span>
+                {/if}
             </button>
         {/each}
     </div>
+
+    <!-- Mensajes de resultado -->
     {#if resultado === "correcta"}
-        <p class="mensaje exito">✅ ¡Correcto! Has ganado un sello.</p>
-    {:else if resultado === "fallida"}
-        <p class="mensaje error">
-            ❌ Se acabaron los intentos de hoy. Vuelve mañana.
+        <p class="mensaje exito" role="status">
+            ✅ ¡Correcto! Has ganado un sello.
         </p>
-    {:else}
-        <p class="intentos">Intentos restantes: {intentosRestantes}</p>
+    {:else if resultado === "fallida"}
+        <p class="mensaje error" role="alert">
+            💔 Se acabaron los intentos de hoy. Vuelve mañana.
+        </p>
+    {:else if intentosRestantes < MAX_INTENTOS}
+        <p class="mensaje aviso" role="status">
+            Incorrecto, sigue intentando.
+        </p>
     {/if}
 </div>
 
 <style>
     .trivia {
-        margin: 20px 0;
+        margin: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────── */
+    .trivia-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .trivia-titulo {
+        font-family: 'Cinzel', serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--gold-bright, #F2C94C);
+        margin: 0;
+    }
+
+    /* ─── Vidas ──────────────────────────────────────────────────── */
+    .vidas {
+        display: flex;
+        gap: 4px;
+    }
+    .vida {
+        font-size: 1.1rem;
+        transition: filter 0.3s, transform 0.3s;
+    }
+    .vida.perdida {
+        filter: grayscale(100%) brightness(0.4);
+        transform: scale(0.8);
+    }
+
+    /* ─── Tarjeta de pregunta ────────────────────────────────────── */
+    .pregunta-card {
+        background: var(--bg-surface, #2C1A0E);
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.25));
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+    .pregunta-texto {
+        font-size: 0.95rem;
+        color: var(--text-primary, #F5E6C8);
+        line-height: 1.6;
+        margin: 0;
         text-align: center;
     }
+
+    /* ─── Opciones ───────────────────────────────────────────────── */
     .opciones {
         display: flex;
         flex-direction: column;
         gap: 10px;
-        margin: 15px 0;
     }
-    button {
-        padding: 10px;
-        border: 2px solid #ccc;
-        border-radius: 8px;
-        background: white;
+
+    .opcion-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 13px 16px;
+        background: var(--bg-card, #1E1008);
+        border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
+        border-radius: 12px;
+        color: var(--text-primary, #F5E6C8);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        text-align: left;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all 0.2s;
     }
-    button:hover:not(:disabled) {
-        background: #f0e0c0;
+    .opcion-btn:hover:not(:disabled) {
+        border-color: var(--gold-mid, #D4A017);
+        background: rgba(212, 160, 23, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
-    button.selected {
-        border-color: #8b5a2b;
+    .opcion-btn:active:not(:disabled) { transform: translateY(0); }
+
+    .opcion-btn.correcta {
+        border-color: var(--success, #4CAF82);
+        background: rgba(76, 175, 130, 0.15);
+        animation: bounce-in 0.35s ease;
     }
-    button.correcta {
-        background: #c8e6c9;
-        border-color: #2e7d32;
+    .opcion-btn.incorrecta {
+        border-color: var(--error, #E05252);
+        background: rgba(224, 82, 82, 0.12);
     }
-    button.incorrecta {
-        background: #ffcdd2;
-        border-color: #c62828;
+    .opcion-btn.desactivada {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Sacudida en respuesta incorrecta */
+    .opcion-btn.sacudir {
+        animation: sacudir 0.45s ease;
+    }
+    @keyframes sacudir {
+        0%, 100% { transform: translateX(0); }
+        15%       { transform: translateX(-8px); }
+        40%       { transform: translateX(8px); }
+        65%       { transform: translateX(-5px); }
+        85%       { transform: translateX(4px); }
+    }
+    @keyframes bounce-in {
+        0%   { transform: scale(0.97); }
+        60%  { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
+    /* ─── Letra de opción ────────────────────────────────────────── */
+    .opcion-letra {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(212, 160, 23, 0.12);
+        border: 1px solid rgba(212, 160, 23, 0.25);
+        color: var(--gold-mid, #D4A017);
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .opcion-btn.correcta .opcion-letra {
+        background: rgba(76, 175, 130, 0.3);
+        border-color: var(--success, #4CAF82);
+        color: var(--success, #4CAF82);
+    }
+
+    .opcion-texto { flex: 1; }
+
+    .opcion-icono {
+        font-size: 1rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .opcion-btn.correcta .opcion-icono { color: var(--success, #4CAF82); }
+    .opcion-btn.incorrecta .opcion-icono { color: var(--error, #E05252); }
+
+    /* ─── Mensajes ───────────────────────────────────────────────── */
+    .mensaje {
+        font-size: 0.875rem;
+        text-align: center;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 500;
+        animation: fadeup 0.3s ease;
     }
     .exito {
-        color: #2e7d32;
-        font-weight: bold;
+        color: var(--success, #4CAF82);
+        background: rgba(76, 175, 130, 0.1);
+        border: 1px solid rgba(76, 175, 130, 0.3);
     }
     .error {
-        color: #c62828;
+        color: var(--error, #E05252);
+        background: rgba(224, 82, 82, 0.1);
+        border: 1px solid rgba(224, 82, 82, 0.3);
     }
-    .intentos {
-        color: #555;
+    .aviso {
+        color: var(--text-muted, #A08060);
+    }
+
+    @keyframes fadeup {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 </style>
