@@ -1,0 +1,25 @@
+---
+import { onAuthState } from "../lib/adminAuth";
+
+// Este layout se ejecuta en el servidor y cliente. Para protección, haremos un script en el cliente.
+---
+
+<html lang="es">
+    <head>
+        <title>Admin – Pasaporte El Oro</title>
+    </head>
+    <body>
+        <slot />
+        <script>
+            import { auth } from "../lib/firebase";
+            import { esAdminLocal } from "../lib/adminAuth";
+            (async () => {
+                await new Promise((r) => auth.onAuthStateChanged((u) => r(u)));
+                const user = auth.currentUser;
+                if (!user || !esAdminLocal(user.uid)) {
+                    window.location.href = "/admin/login";
+                }
+            })();
+        </script>
+    </body>
+</html>

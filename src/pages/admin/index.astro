@@ -1,0 +1,10 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DashboardStats from "../../components/admin/DashboardStats.svelte";
+---
+
+<AdminLayout>
+    <h1>Panel de Administración</h1>
+    <nav><a href="/admin/puntos">Gestionar puntos</a></nav>
+    <DashboardStats client:load />
+</AdminLayout>

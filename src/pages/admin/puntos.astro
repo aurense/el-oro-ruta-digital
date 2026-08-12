@@ -1,0 +1,9 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminPuntos from "../../components/admin/AdminPuntos.svelte";
+---
+
+<AdminLayout>
+    <h1>Gestión de Puntos Turísticos</h1>
+    <AdminPuntos client:load />
+</AdminLayout>

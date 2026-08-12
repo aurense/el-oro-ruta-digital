@@ -1,0 +1,130 @@
+[
+  {
+    "nombre": "Aguascalientes",
+    "municipios_url": "/data/municipios/aguascalientes.json"
+  },
+  {
+    "nombre": "Baja California",
+    "municipios_url": "/data/municipios/baja-california.json"
+  },
+  {
+    "nombre": "Baja California Sur",
+    "municipios_url": "/data/municipios/baja-california-sur.json"
+  },
+  {
+    "nombre": "Campeche",
+    "municipios_url": "/data/municipios/campeche.json"
+  },
+  {
+    "nombre": "Coahuila de Zaragoza",
+    "municipios_url": "/data/municipios/coahuila-de-zaragoza.json"
+  },
+  {
+    "nombre": "Colima",
+    "municipios_url": "/data/municipios/colima.json"
+  },
+  {
+    "nombre": "Chiapas",
+    "municipios_url": "/data/municipios/chiapas.json"
+  },
+  {
+    "nombre": "Chihuahua",
+    "municipios_url": "/data/municipios/chihuahua.json"
+  },
+  {
+    "nombre": "Ciudad de México",
+    "municipios_url": "/data/municipios/ciudad-de-mexico.json"
+  },
+  {
+    "nombre": "Durango",
+    "municipios_url": "/data/municipios/durango.json"
+  },
+  {
+    "nombre": "Guanajuato",
+    "municipios_url": "/data/municipios/guanajuato.json"
+  },
+  {
+    "nombre": "Guerrero",
+    "municipios_url": "/data/municipios/guerrero.json"
+  },
+  {
+    "nombre": "Hidalgo",
+    "municipios_url": "/data/municipios/hidalgo.json"
+  },
+  {
+    "nombre": "Jalisco",
+    "municipios_url": "/data/municipios/jalisco.json"
+  },
+  {
+    "nombre": "México",
+    "municipios_url": "/data/municipios/mexico.json"
+  },
+  {
+    "nombre": "Michoacán de Ocampo",
+    "municipios_url": "/data/municipios/michoacan-de-ocampo.json"
+  },
+  {
+    "nombre": "Morelos",
+    "municipios_url": "/data/municipios/morelos.json"
+  },
+  {
+    "nombre": "Nayarit",
+    "municipios_url": "/data/municipios/nayarit.json"
+  },
+  {
+    "nombre": "Nuevo León",
+    "municipios_url": "/data/municipios/nuevo-leon.json"
+  },
+  {
+    "nombre": "Oaxaca",
+    "municipios_url": "/data/municipios/oaxaca.json"
+  },
+  {
+    "nombre": "Puebla",
+    "municipios_url": "/data/municipios/puebla.json"
+  },
+  {
+    "nombre": "Querétaro",
+    "municipios_url": "/data/municipios/queretaro.json"
+  },
+  {
+    "nombre": "Quintana Roo",
+    "municipios_url": "/data/municipios/quintana-roo.json"
+  },
+  {
+    "nombre": "San Luis Potosí",
+    "municipios_url": "/data/municipios/san-luis-potosi.json"
+  },
+  {
+    "nombre": "Sinaloa",
+    "municipios_url": "/data/municipios/sinaloa.json"
+  },
+  {
+    "nombre": "Sonora",
+    "municipios_url": "/data/municipios/sonora.json"
+  },
+  {
+    "nombre": "Tabasco",
+    "municipios_url": "/data/municipios/tabasco.json"
+  },
+  {
+    "nombre": "Tamaulipas",
+    "municipios_url": "/data/municipios/tamaulipas.json"
+  },
+  {
+    "nombre": "Tlaxcala",
+    "municipios_url": "/data/municipios/tlaxcala.json"
+  },
+  {
+    "nombre": "Veracruz de Ignacio de la Llave",
+    "municipios_url": "/data/municipios/veracruz-de-ignacio-de-la-llave.json"
+  },
+  {
+    "nombre": "Yucatán",
+    "municipios_url": "/data/municipios/yucatan.json"
+  },
+  {
+    "nombre": "Zacatecas",
+    "municipios_url": "/data/municipios/zacatecas.json"
+  }
+]

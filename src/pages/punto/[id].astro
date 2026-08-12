@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PuntoPage from "../../components/PuntoPage.svelte";
+import { puntos } from "../../data/puntos";
+
+export function getStaticPaths() {
+    return puntos.map((p) => ({ params: { id: p.id } }));
+}
+
+const { id } = Astro.params;
+const punto = puntos.find((p) => p.id === id);
+
+if (!punto) {
+    return Astro.redirect("/404");
+}
+---
+
+<BaseLayout>
+    <PuntoPage punto={punto} client:load />
+</BaseLayout>

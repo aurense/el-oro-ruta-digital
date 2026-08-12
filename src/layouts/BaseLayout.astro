@@ -1,0 +1,76 @@
+---
+// BaseLayout.astro
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pasaporte El Oro</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#8B5A2B" />
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui;
+        background: #fdfaf5;
+      }
+      .nav-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+      .logo {
+        font-weight: bold;
+        color: #8b5a2b;
+        text-decoration: none;
+      }
+      .nav-link {
+        color: #555;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav-bar">
+      <a href="/" class="logo">🧳 Pasaporte El Oro</a>
+      <a href="/perfil" class="nav-link">👤 Mi perfil</a>
+    </nav>
+    <slot />
+    <script>
+      import { habilitarPersistenciaOffline } from "../lib/firestore-persistence";
+      import { iniciarSesionAnonima, escucharAuth } from "../lib/auth";
+      import { userStore } from "../stores/user";
+      import { obtenerUsuario } from "../lib/db";
+
+      // Activar Firestore offline
+      habilitarPersistenciaOffline();
+
+      escucharAuth(async (uid) => {
+        console.log("[Auth] uid:", uid);
+        userStore.update((s) => ({ ...s, uid }));
+        if (uid) {
+          try {
+            const datos = await obtenerUsuario(uid);
+            console.log("[Auth] Datos Firestore:", datos);
+            userStore.update((s) => ({
+              ...s,
+              perfil: datos?.perfil || null,
+              sellos: datos?.sellos || [],
+            }));
+          } catch (e) {
+            console.error("[Auth] Error al leer usuario:", e);
+          }
+        }
+      });
+
+      iniciarSesionAnonima();
+    </script>
+    <script src="/registerSW.js" is:inline></script>
+  </body>
+</html>
