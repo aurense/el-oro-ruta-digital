@@ -1,12 +1,29 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
+
     export let imagen: string;
     export let nombre: string;
     export let obtenida: boolean;
+    export let puntoId: string; // necesario para el evento
+
+    const dispatch = createEventDispatcher();
+
+    function handleClick() {
+        if (obtenida) dispatch("seleccionar", { puntoId });
+    }
 </script>
 
-<div class="badge" class:obtenida>
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<div
+    class="badge"
+    class:obtenida
+    role={obtenida ? "button" : undefined}
+    tabindex={obtenida ? 0 : undefined}
+    aria-label={obtenida ? `Ver sello obtenido: ${nombre}` : `Sello bloqueado: ${nombre}`}
+    on:click={handleClick}
+    on:keydown={(e) => e.key === "Enter" && handleClick()}
+>
     <div class="badge-img-wrapper">
-        <!-- Aura de glow para badges obtenidas -->
         {#if obtenida}
             <div class="badge-glow" aria-hidden="true"></div>
         {/if}
@@ -31,20 +48,26 @@
         border-radius: 16px;
         background: var(--bg-card, #1E1008);
         border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.1));
-        transition: transform 0.2s, border-color 0.3s;
+        transition: transform 0.2s, border-color 0.3s, box-shadow 0.2s;
         position: relative;
         cursor: default;
+        user-select: none;
     }
 
     .badge.obtenida {
         border-color: var(--border-gold, rgba(212, 160, 23, 0.4));
         background: linear-gradient(145deg, #1E1008, #2A1A0A);
         animation: pulso-gold 4s ease-in-out infinite;
+        cursor: pointer;
     }
     .badge.obtenida:hover {
         transform: translateY(-4px) scale(1.03);
         border-color: var(--gold-mid, #D4A017);
         box-shadow: 0 8px 32px rgba(212, 160, 23, 0.3);
+    }
+    .badge.obtenida:active {
+        transform: translateY(-2px) scale(0.97);
+        transition: transform 0.1s;
     }
 
     @keyframes pulso-gold {

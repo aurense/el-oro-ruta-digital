@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'pasaporte-eloro-v2'; // aumentamos versión para forzar actualización
+const CACHE_NAME = 'pasaporte-eloro-v3'; // aumentamos versión para forzar actualización
 
 // Archivos que DEBEN estar precacheados para funcionar offline sin necesidad de haberlos visitado antes
 const PRECACHE_URLS = [
@@ -21,7 +21,9 @@ const PRECACHE_URLS = [
     '/img/miniatura-tiro-norte.png',
     '/img/insignia-tiro-norte.png',
     '/img/test-logro.png',
-    '/audio/muestra.mp3',       // <-- cambia al nombre real de tu archivo de audio
+    '/audio/audio-palacio-municipal.mp3',
+    '/audio/audio-teatro-juarez.mp3',
+    '/audio/audio-tiro-norte.mp3',
     // Datos geográficos
     '/data/paises.json',
     '/data/estados-mexico.json',

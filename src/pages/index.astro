@@ -1,11 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import RutaMapa from "../components/RutaMapa.svelte";
 import StampCollection from "../components/StampCollection.svelte";
 import { puntos } from "../data/puntos";
 ---
 
 <BaseLayout>
 	<main>
-		<StampCollection puntos={puntos} client:load />
+		<RutaMapa {puntos} client:load />
+		<StampCollection {puntos} client:load />
 	</main>
 </BaseLayout>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import StampBadge from "./StampBadge.svelte";
+    import ModalSello from "./ModalSello.svelte";
     import { userStore } from "../stores/user";
     import type { PuntoData } from "../data/puntos";
     import { onMount } from "svelte";
@@ -21,6 +22,16 @@
     onMount(() => {
         setTimeout(() => (barraVisible = true), 100);
     });
+
+    // ─── Modal de celebración ─────────────────────────────────────
+    let puntoModal: PuntoData | null = null;
+
+    function abrirModal(punto: PuntoData) {
+        puntoModal = punto;
+    }
+    function cerrarModal() {
+        puntoModal = null;
+    }
 </script>
 
 <div class="pasaporte">
@@ -53,7 +64,9 @@
             <StampBadge
                 imagen={punto.insigniaURL}
                 nombre={punto.nombre}
+                puntoId={punto.id}
                 {obtenida}
+                on:seleccionar={() => abrirModal(punto)}
             />
         {/each}
     </div>
@@ -67,6 +80,18 @@
         </div>
     {/if}
 </div>
+
+<!-- Modal de celebración (fuera del .pasaporte para evitar z-index issues) -->
+{#if puntoModal}
+    {@const sello = sellos.find((s) => s.puntoId === puntoModal?.id)}
+    <ModalSello
+        punto={puntoModal}
+        fechaObtenida={sello?.fecha ?? null}
+        totalSellos={obtenidos}
+        totalPuntos={total}
+        on:cerrar={cerrarModal}
+    />
+{/if}
 
 <style>
     .pasaporte {
