@@ -6,15 +6,11 @@
 
     // ─── Estado ─────────────────────────────────────────────────────────────
     $: sellos = $userStore.sellos;
+    $: idsVisitados = new Set(sellos.map((s) => s.puntoId));
     $: obtenidos = sellos.length;
     $: total = puntos.length;
 
     let puntoSeleccionado: PuntoData | null = null;
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-    function estaVisitado(id: string): boolean {
-        return sellos.some((s) => s.puntoId === id);
-    }
 
     function handleMarcadorClick(punto: PuntoData) {
         // Toggle: si ya está seleccionado, cierra; si no, abre
@@ -26,7 +22,7 @@
     }
 
     function irAlPunto(id: string) {
-        window.location.href = `/punto/${id}`;
+        window.location.href = `/punto/${id}?origen=sello`;
     }
 
     /**
@@ -141,7 +137,7 @@
             {#each puntos as punto, i}
                 {#if i < puntos.length - 1}
                     {@const siguiente = puntos[i + 1]}
-                    {@const activa = estaVisitado(siguiente.id)}
+                    {@const activa = idsVisitados.has(siguiente.id)}
 
                     <!-- Ruta base gris (siempre visible) -->
                     <line
@@ -172,7 +168,7 @@
             <!-- ─ MARCADORES (escalable: itera todos los puntos) ────── -->
             <!-- ═══════════════════════════════════════════════════════ -->
             {#each puntos as punto, i}
-                {@const visitado = estaVisitado(punto.id)}
+                {@const visitado = idsVisitados.has(punto.id)}
                 {@const seleccionado = puntoSeleccionado?.id === punto.id}
 
                 <!-- Anillo de pulso (solo en visitados) -->
@@ -259,7 +255,7 @@
 
         <!-- ─ Tooltip / Panel de punto seleccionado ─────────────────── -->
         {#if puntoSeleccionado}
-            {@const visitado = estaVisitado(puntoSeleccionado.id)}
+            {@const visitado = idsVisitados.has(puntoSeleccionado.id)}
             <div
                 class="tooltip"
                 class:tooltip-visitado={visitado}

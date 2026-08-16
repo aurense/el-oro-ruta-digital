@@ -1,3 +1,13 @@
+/**
+ * Puntos turísticos de El Oro, México.
+ * 
+ * NOTA PARA ADMINISTRACIÓN Y GENERACIÓN DE CÓDIGOS QR:
+ * Los códigos QR físicos instalados en cada monumento/atractivo deben apuntar a la URL
+ * con el parámetro de origen 'qr':
+ *   https://[dominio-app]/punto/{id}?origen=qr
+ * Ejemplo: https://pasaporte-eloro.web.app/punto/palacio-municipal?origen=qr
+ */
+
 export interface PuntoData {
     id: string;
     nombre: string;

@@ -19,7 +19,7 @@ export async function obtenerUsuario(uid: string) {
     return snap.exists() ? snap.data() : null;
 }
 
-export async function guardarSello(uid: string, puntoId: string) {
+export async function guardarSello(uid: string, puntoId: string, origen: string = 'desconocido') {
     const userRef = doc(db, 'usuarios', uid);
     // Intentamos obtener los sellos existentes. Si no existe el documento o falla (offline),
     // empezamos con un array vacío.
@@ -32,21 +32,23 @@ export async function guardarSello(uid: string, puntoId: string) {
     } catch (e) {
         // Si estamos offline y el documento no existe localmente, simplemente iniciamos vacío
     }
-    // Agregamos el nuevo sello
+    // Agregamos el nuevo sello incluyendo el origen
     sellos.push({
         puntoId,
         fecha: new Date().toISOString(),
+        origen,
     });
     // Guardamos todo el array (merge: true no borra el campo perfil si existe)
     await setDoc(userRef, { sellos }, { merge: true });
 }
 
-export async function guardarVisita(uid: string, puntoId: string) {
+export async function guardarVisita(uid: string, puntoId: string, origen: string = 'desconocido') {
     const visitaRef = doc(collection(db, 'usuarios', uid, 'visitas'), puntoId);
     await setDoc(visitaRef, {
         fecha: new Date(),
         selloObtenido: true,
         intentosTrivia: 0, // podemos actualizar si queremos
         ultimoIntento: new Date(),
-    });
+        origen,
+    }, { merge: true });
 }

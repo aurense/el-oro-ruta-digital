@@ -14,7 +14,9 @@ Escanea códigos QR, escucha historias, responde trivias y colecciona sellos, to
 
 - 📱 **PWA offline‑first** – Funciona completa sin internet después de la primera visita.
 - 🎧 **Narraciones en audio** – Reproducción inmersiva con avance bloqueado para garantizar la escucha completa.
-- 🧠 **Trivias desbloqueables** – Al terminar cada audio se habilita una trivia; al acertar ganas un sello digital.
+- 🧠 **Trivias desbloqueables** – Al terminar cada audio se abre un modal con la trivia; al acertar ganas un sello digital.
+- 🗺️ **Mapa interactivo SVG** – Visualización de la ruta de exploración con marcadores que cambian de aspecto al ser visitados.
+- 🏅 **Colección de sellos** – Pasaporte visual con insignias, barra de progreso XP y modal de celebración con confetti.
 - 📊 **Estadísticas anónimas** – Recolecta origen (país, estado, municipio) y rango de edad del visitante con fines turísticos.
 - 🛡️ **Panel de administración** – Crea, edita y elimina puntos turísticos, y visualiza estadísticas de visitas.
 - 🌐 **Preparado para multi‑idioma** – Español, inglés y mazahua (inglés y mazahua pendientes de activar).
@@ -118,7 +120,18 @@ npx serve dist
 │   ├── sw.js             # Service Worker manual
 │   └── registerSW.js     # Registro del SW
 ├── src/
-│   ├── components/       # Componentes Svelte (AudioPlayer, Trivia, …)
+│   ├── components/       # Componentes Svelte
+│   │   ├── AudioPlayer.svelte      # Reproductor con avance bloqueado
+│   │   ├── Trivia.svelte           # Modal de trivia con <dialog>
+│   │   ├── DataForm.svelte         # Modal de datos de perfil
+│   │   ├── RutaMapa.svelte         # Mapa SVG interactivo de la ruta
+│   │   ├── StampCollection.svelte  # Colección de sellos con progreso
+│   │   ├── StampBadge.svelte       # Insignia individual
+│   │   ├── ModalSello.svelte       # Modal de celebración con confetti
+│   │   ├── PuntoPage.svelte        # Página completa del punto turístico
+│   │   ├── PerfilPage.svelte       # Vista/edición del perfil
+│   │   ├── SelectoresUbicacion.svelte  # Selectores país/estado/municipio
+│   │   └── admin/                  # Panel de administración
 │   ├── data/             # Datos estáticos de los puntos (puntos.ts)
 │   ├── layouts/          # Layouts de Astro (BaseLayout, AdminLayout)
 │   ├── lib/              # Lógica de Firebase, autenticación, DB, estadísticas
@@ -165,10 +178,48 @@ Los archivos multimedia (audio, imágenes) deben alojarse en `public/` y referen
 
 ---
 
+## 🔮 Mejoras futuras
+
+### 🟢 Corto plazo (v1.1)
+
+| Mejora | Descripción |
+|--------|-------------|
+| **Multi‑idioma** | Activar las traducciones a inglés y mazahua que ya están preparadas con `astro-i18next`. |
+| **Generación automática de QR** | Generar e imprimir códigos QR para cada punto desde el panel de administración, eliminando la creación manual. |
+| **Notificaciones push** | Avisar al usuario cuando esté cerca de un punto no visitado (requiere permiso de geolocalización). |
+| **Compartir en redes** | Botón para compartir el progreso del pasaporte o un sello individual vía Web Share API. |
+| **Animación de transición entre fases** | Usar View Transitions API para animar la transición entre audio → trivia → celebración. |
+
+### 🟡 Mediano plazo (v2.0)
+
+| Mejora | Descripción |
+|--------|-------------|
+| **Diploma descargable** | Generar un diploma personalizado (Canvas/PDF) al completar todos los sellos, con nombre del visitante, fecha y QR de verificación. |
+| **Enlace público compartible** | URL única por pasaporte para que el visitante lo muestre sin necesidad de la app. |
+| **Realidad aumentada** | Al apuntar la cámara al punto turístico, mostrar una superposición histórica (ej. cómo lucía el edificio en 1900). |
+| **Dashboard con gráficos** | Integrar Chart.js o similar en el panel admin para visualizar tendencias de visitas, heatmaps de horarios y demografía. |
+| **Ranking y gamificación** | Tabla de líderes anónima (por tiempo de completado), logros especiales (ej. "Visitaste los 3 puntos en un solo día"). |
+| **Audio‑guía con narrador IA** | Generar narraciones en múltiples voces/idiomas usando TTS, reduciendo costos de producción de audio. |
+| **Modo nocturno del mapa** | Variante visual del mapa SVG para visitas nocturnas con iluminación distinta y puntos de interés nocturnos. |
+
+### 🔴 Largo plazo (v3.0)
+
+| Mejora | Descripción |
+|--------|-------------|
+| **Escalabilidad multi‑pueblo** | Arquitectura multi‑tenant para desplegar pasaportes en otros Pueblos Mágicos con su propia identidad visual y datos. |
+| **App nativa (Capacitor)** | Empaquetar la PWA como app nativa para iOS/Android con acceso a NFC, cámara nativa y notificaciones locales. |
+| **Modo guía turístico** | Rol adicional para guías locales: pueden iniciar recorridos grupales, ver progreso de su grupo y enviar avisos. |
+| **Sincronización offline robusta** | Migrar a `workbox-background-sync` con cola explícita y resolución de conflictos para garantizar 100 % de datos offline. |
+| **Integración con secretaría de turismo** | API para exportar estadísticas agregadas al sistema de la Secretaría de Turismo del Estado de México. |
+| **Accesibilidad completa (WCAG 2.1 AA)** | Auditar y mejorar la accesibilidad: lectores de pantalla, navegación por teclado, contraste, subtítulos en audio. |
+| **Analítica avanzada** | Integrar Firebase Analytics o Plausible para medir engagement, tasa de completado, puntos de abandono y A/B testing. |
+
+---
+
 ## 🤝 Contribuir
 
 ¡Toda colaboración es bienvenida!  
-Revisa el archivo [agents.md](./agents.md) para una guía completa del proyecto.  
+Revisa el archivo [AGENTS.md](./AGENTS.md) para una guía completa del proyecto.  
 Por favor, sigue las buenas prácticas del stack y mantén el enfoque offline‑first.
 
 ---
@@ -176,3 +227,4 @@ Por favor, sigue las buenas prácticas del stack y mantén el enfoque offline‑
 ## 📄 Licencia
 
 MIT © Fundación Aurense – El Oro, Estado de México.
+

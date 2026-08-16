@@ -14,6 +14,15 @@
     let playing = false;
     let ended = false;
 
+    // ── Velocidad de reproducción ──
+    const velocidades = [0.75, 1, 1.25, 1.5];
+    let velocidadActual = 1;
+
+    function setVelocidad(v: number) {
+        velocidadActual = v;
+        if (audio) audio.playbackRate = v;
+    }
+
     /** Convierte segundos a mm:ss */
     function formatTime(s: number): string {
         const m = Math.floor(s / 60);
@@ -26,12 +35,27 @@
             currentTime = audio.currentTime;
             duration = audio.duration || duracion;
             progress = (currentTime / duration) * 100;
-            if (audio.ended) {
+            // Solo actualiza estado; el dispatch lo maneja onAudioEnded
+            if (audio.ended && !ended) {
                 ended = true;
                 playing = false;
-                dispatch("ended");
             }
         }
+    }
+
+    /** Llamado por el evento nativo 'ended' del <audio> — más fiable que pollear en timeupdate */
+    function onAudioEnded() {
+        ended = true;
+        playing = false;
+        dispatch("ended");
+    }
+
+    /** Si el archivo no puede cargarse, muestra error sin avanzar de fase */
+    let errorCarga = false;
+    function onAudioError() {
+        errorCarga = true;
+        playing = false;
+        console.error("AudioPlayer: no se pudo cargar el audio:", audio?.src);
     }
 
     function togglePlay() {
@@ -60,6 +84,7 @@
             audio.pause();
             audio.src = "";
         }
+        velocidadActual = 1;
     });
 </script>
 
@@ -104,11 +129,40 @@
         <div class="progress-fill" style="width: {progress}%"></div>
     </div>
 
-    <!-- Tiempo -->
-    <div class="time-display">
-        <span class="time-current">{formatTime(currentTime)}</span>
-        <span class="time-sep">/</span>
-        <span class="time-total">{formatTime(duration || duracion)}</span>
+    <!-- Tiempo + Velocidad en una sola fila -->
+    <div class="time-speed-row">
+        <div class="time-display">
+            <span class="time-current">{formatTime(currentTime)}</span>
+            <span class="time-sep">/</span>
+            <span class="time-total">{formatTime(duration || duracion)}</span>
+        </div>
+
+        <div
+            role="group"
+            aria-label="Velocidad de reproducción"
+            style="display:flex; gap:5px; align-items:center;"
+        >
+            {#each velocidades as v}
+                <button
+                    on:click={() => setVelocidad(v)}
+                    aria-pressed={velocidadActual === v}
+                    aria-label="{v}x velocidad"
+                    style="
+                        padding: 3px 8px;
+                        border-radius: 999px;
+                        border: 1px solid {velocidadActual === v ? '#D4A017' : 'rgba(212,160,23,0.2)'};
+                        background: {velocidadActual === v ? 'rgba(212,160,23,0.18)' : 'transparent'};
+                        color: {velocidadActual === v ? '#F2C94C' : '#7A6040'};
+                        font-size: 0.68rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        line-height: 1.4;
+                        font-family: Inter, sans-serif;
+                        transition: all 0.15s;
+                    "
+                >{v === 1 ? '1×' : `${v}×`}</button>
+            {/each}
+        </div>
     </div>
 
     <!-- Elemento de audio oculto -->
@@ -116,11 +170,17 @@
         bind:this={audio}
         src={audioURL}
         on:timeupdate={onTimeUpdate}
+        on:ended={onAudioEnded}
+        on:error={onAudioError}
         on:loadedmetadata={() => (duration = audio.duration || duracion)}
         on:seeking={handleSeeking}
         controls={false}
         preload="auto"
     ></audio>
+
+    {#if errorCarga}
+        <p class="error-carga">⚠️ No se pudo cargar el audio. Verifica tu conexión.</p>
+    {/if}
 </div>
 
 <style>
@@ -222,7 +282,14 @@
         box-shadow: 0 0 8px rgba(242, 201, 76, 0.5);
     }
 
-    /* ─── Tiempo ─────────────────────────────────────────────────── */
+    /* ─── Tiempo + fila de velocidad ────────────────────────────── */
+    .time-speed-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
     .time-display {
         display: flex;
         align-items: center;
@@ -230,8 +297,53 @@
         font-size: 0.82rem;
         font-variant-numeric: tabular-nums;
         font-weight: 500;
+        flex-shrink: 0;
     }
     .time-current { color: var(--gold-bright, #F2C94C); }
     .time-sep     { color: var(--text-dim, #6B5040); }
     .time-total   { color: var(--text-muted, #A08060); }
+
+    /* ─── Chips de velocidad ──────────────────────────────── */
+    .speed-chips {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .speed-chip {
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 160, 23, 0.2);
+        background: transparent;
+        color: var(--text-dim, #6B5040);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s;
+        line-height: 1;
+    }
+    .speed-chip:hover:not(.activo) {
+        border-color: rgba(212, 160, 23, 0.5);
+        color: var(--text-muted, #A08060);
+        background: rgba(212, 160, 23, 0.06);
+    }
+    .speed-chip.activo {
+        background: rgba(212, 160, 23, 0.15);
+        border-color: var(--gold-mid, #D4A017);
+        color: var(--gold-bright, #F2C94C);
+        box-shadow: 0 0 8px rgba(212, 160, 23, 0.2);
+    }
+
+    /* ─── Error de carga ─────────────────────────────────────── */
+    .error-carga {
+        font-size: 0.78rem;
+        color: #E07B39;
+        text-align: center;
+        margin: 0;
+        padding: 8px 12px;
+        background: rgba(224, 123, 57, 0.08);
+        border: 1px solid rgba(224, 123, 57, 0.25);
+        border-radius: 8px;
+        width: 100%;
+    }
 </style>

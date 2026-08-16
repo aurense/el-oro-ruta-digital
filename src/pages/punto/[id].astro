@@ -9,6 +9,7 @@ export function getStaticPaths() {
 
 const { id } = Astro.params;
 const punto = puntos.find((p) => p.id === id);
+const origen = Astro.url.searchParams.get("origen") || "desconocido";
 
 if (!punto) {
     return Astro.redirect("/404");
@@ -16,5 +17,5 @@ if (!punto) {
 ---
 
 <BaseLayout>
-    <PuntoPage punto={punto} client:load />
+    <PuntoPage punto={punto} origen={origen} client:load />
 </BaseLayout>

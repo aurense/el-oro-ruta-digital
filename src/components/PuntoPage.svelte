@@ -23,23 +23,47 @@
         };
         insigniaURL: string;
     };
+    export let origen: string = "desconocido";
 
-    let fase: "audio" | "trivia" | "selloGanado" | "fallida" = "audio";
+    let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" = "audio";
     let mostrarDataForm = false;
     let datosPerfilGuardados = false;
     let perfilLocal = $userStore.perfil;
+    let selloRecienGanado = false;
+    let faseInicializada = false;
     // Para la animación del confetti
     let confettiPiezas: { x: number; color: string; delay: number; duration: number; size: number }[] = [];
 
     $: uid = $userStore.uid;
     $: perfil = $userStore.perfil;
     $: sellos = $userStore.sellos;
+    $: yaTieneSello = Boolean(sellos.some((s) => s.puntoId === punto.id));
+
+    // Si al cargar o hidratar el store el usuario ya tiene el sello, iniciar directamente en selloGanado
+    $: if (yaTieneSello && !faseInicializada && fase === "audio") {
+        fase = "selloGanado";
+        faseInicializada = true;
+    }
+
+    onMount(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const origenUrl = params.get("origen");
+            if (origenUrl) {
+                origen = origenUrl;
+            }
+        }
+    });
 
     function onAudioEnded() {
-        fase = "trivia";
+        fase = yaTieneSello ? "triviaRevisit" : "trivia";
     }
 
     function onTriviaSuccess() {
+        if (yaTieneSello) {
+            fase = "selloGanado";
+            return;
+        }
         if (sellos.length === 0 && !perfil) {
             mostrarDataForm = true;
         } else {
@@ -72,18 +96,20 @@
     }
 
     async function guardarSelloLocal() {
-        if (!uid) return;
+        if (!uid || yaTieneSello) return;
+        selloRecienGanado = true;
         try {
-            await guardarSello(uid, punto.id);
+            await guardarSello(uid, punto.id, origen);
+            await guardarVisita(uid, punto.id, origen);
             userStore.update((s) => ({
                 ...s,
-                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date() }],
+                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date(), origen }],
             }));
             activarCelebracion();
         } catch (e) {
             userStore.update((s) => ({
                 ...s,
-                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date() }],
+                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date(), origen }],
             }));
             activarCelebracion();
             console.warn("El sello se guardará en el servidor cuando vuelva la conexión.", e);
@@ -117,6 +143,14 @@
     function irAlPasaporte() {
         window.location.href = "/";
     }
+
+    function verTrivia() {
+        fase = "triviaRevisit";
+    }
+
+    function escucharAudio() {
+        fase = "audio";
+    }
 </script>
 
 <div class="punto-page">
@@ -139,34 +173,50 @@
             on:ended={onAudioEnded}
         />
 
-    <!-- ─ Fase: TRIVIA ─ -->
+    <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
     {:else if fase === "trivia"}
         <Trivia
             pregunta={punto.trivia.pregunta}
             opciones={punto.trivia.opciones}
             puntoId={punto.id}
+            modoRevisar={false}
             on:success={onTriviaSuccess}
             on:failed={onTriviaFailed}
+            on:cerrar={() => { fase = "audio"; }}
+        />
+
+    <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
+    {:else if fase === "triviaRevisit"}
+        <Trivia
+            pregunta={punto.trivia.pregunta}
+            opciones={punto.trivia.opciones}
+            puntoId={punto.id}
+            modoRevisar={true}
+            on:success={onTriviaSuccess}
+            on:failed={onTriviaFailed}
+            on:cerrar={() => { fase = "selloGanado"; }}
         />
 
     <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
     {:else if fase === "selloGanado"}
-        <!-- Confetti -->
-        <div class="confetti-container" aria-hidden="true">
-            {#each confettiPiezas as p}
-                <span
-                    class="confetti-pieza"
-                    style="
-                        left: {p.x}%;
-                        background: {p.color};
-                        width: {p.size}px;
-                        height: {p.size}px;
-                        animation-delay: {p.delay}s;
-                        animation-duration: {p.duration}s;
-                    "
-                ></span>
-            {/each}
-        </div>
+        <!-- Confetti solo en la primera celebración de la sesión -->
+        {#if selloRecienGanado && confettiPiezas.length > 0}
+            <div class="confetti-container" aria-hidden="true">
+                {#each confettiPiezas as p}
+                    <span
+                        class="confetti-pieza"
+                        style="
+                            left: {p.x}%;
+                            background: {p.color};
+                            width: {p.size}px;
+                            height: {p.size}px;
+                            animation-delay: {p.delay}s;
+                            animation-duration: {p.duration}s;
+                        "
+                    ></span>
+                {/each}
+            </div>
+        {/if}
 
         <div class="celebracion">
             <!-- Aura giratoria + badge -->
@@ -180,15 +230,44 @@
                 />
             </div>
 
-            <p class="celebracion-etiqueta">¡SELLO OBTENIDO!</p>
+            <p class="celebracion-etiqueta">
+                {selloRecienGanado ? "¡SELLO OBTENIDO!" : "SELLO OBTENIDO"}
+            </p>
             <h2 class="celebracion-nombre">{punto.nombre}</h2>
             <p class="celebracion-contador">
-                Tu pasaporte: <strong>{sellos.length}</strong> de <strong>3</strong> sellos
+                {#if selloRecienGanado}
+                    Tu pasaporte: <strong>{sellos.length}</strong> de <strong>3</strong> sellos
+                {:else}
+                    Ya has obtenido este sello en tu pasaporte.
+                {/if}
             </p>
 
             <div class="celebracion-acciones">
                 <button class="btn-gold" on:click={irAlPasaporte}>
-                    🎒 Ver mi pasaporte
+                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        <circle cx="12" cy="9.5" r="2.5" fill="currentColor" fill-opacity="0.35"/>
+                        <path d="M12 7.5v4"/>
+                        <path d="M10 9.5h4"/>
+                    </svg>
+                    <span>Ver mi pasaporte</span>
+                </button>
+                <button class="btn-outline" on:click={verTrivia}>
+                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9.5"/>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.35"/>
+                        <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
+                    </svg>
+                    <span>Desafío minero</span>
+                </button>
+                <button class="btn-outline" on:click={escucharAudio}>
+                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" fill-opacity="0.3"/>
+                        <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+                        <path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6"/>
+                    </svg>
+                    <span>Escuchar relato</span>
                 </button>
             </div>
         </div>
@@ -454,5 +533,23 @@
         background: rgba(212, 160, 23, 0.1);
         border-color: var(--gold-bright, #F2C94C);
         color: var(--gold-bright, #F2C94C);
+    }
+
+    /* ─── Iconos vectoriales de época para botones ─────────────────── */
+    .btn-icono {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-gold .btn-icono {
+        color: var(--bg-primary, #12090A);
+    }
+    .btn-outline .btn-icono {
+        color: var(--gold-mid, #D4A017);
+    }
+    .btn-gold:hover .btn-icono,
+    .btn-outline:hover .btn-icono {
+        transform: scale(1.15);
     }
 </style>

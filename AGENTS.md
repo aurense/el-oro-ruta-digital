@@ -84,9 +84,21 @@ puntos (colección)
 usuarios (colección)
   └─ {uid}
        ├─ perfil: { pais, estado, municipio, rangoEdad }
-       └─ sellos: [ { puntoId, fecha } ]
+       ├─ sellos: [ { puntoId, fecha, origen } ]
+       └─ visitas (subcolección)
+            └─ {puntoId}
+                 ├─ fecha: Timestamp
+                 ├─ selloObtenido: boolean
+                 ├─ intentosTrivia: number
+                 ├─ ultimoIntento: Timestamp
+                 └─ origen: string ('qr' | 'sello' | 'desconocido')
 ```
 Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.ts` para máxima velocidad offline. El panel de administración escribe en Firestore, pero la PWA del turista puede leer de Firestore o del archivo local, según se configure.
+
+### 5. Parámetros de Origen de Visita
+- `?origen=qr`: Visitas iniciadas desde el escaneo de un código QR físico en un punto turístico.
+- `?origen=sello`: Visitas iniciadas desde enlaces internos del pasaporte (ej. modal de sello o mapa).
+- `desconocido`: Valor por defecto si no se especifica el parámetro.
 
 ## 📁 Estructura del proyecto
 ```
@@ -138,14 +150,19 @@ Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.
 ```
 
 ## 🔄 Flujo del usuario (turista)
-1. Escanea QR → `/punto/{id}`
+1. Escanea QR físico → `/punto/{id}?origen=qr` (o accede desde el pasaporte con `?origen=sello`).
 2. Inicio de sesión anónimo automático (sin interacción).
-3. Reproducción del audio con avance bloqueado.
-4. Al terminar, se habilita trivia (1 pregunta, 4 opciones, 3 intentos diarios).
-5. Al acertar:
-   - Si es el primer sello → modal con aviso de privacidad y datos obligatorios (país, estado, municipio, edad).
-   - Se guarda el sello en Firestore (offline si es necesario).
-6. El pasaporte en `/` muestra todas las insignias (grises si no obtenidas, color si obtenidas).
+3. **Si el usuario ya tiene el sello de ese punto:**
+   - Carga directamente en estado "Sello obtenido" sin obligar a escuchar el audio.
+   - Opciones disponibles: "🎒 Ver mi pasaporte", "🎯 Ver trivia" (modo repaso) y "🎧 Escuchar audio".
+   - En modo repaso, si ya acertó hoy se muestra la respuesta correcta bloqueada; si no, puede responder pero no genera sellos duplicados.
+4. **Si el usuario aún no tiene el sello:**
+   - Reproducción del audio con avance bloqueado.
+   - Al terminar, se habilita trivia (1 pregunta, 4 opciones, 4 intentos diarios).
+   - Al acertar:
+     - Si es el primer sello → modal con aviso de privacidad y datos obligatorios (país, estado, municipio, edad).
+     - Se guarda el sello en Firestore (offline si es necesario).
+5. El pasaporte en `/` muestra todas las insignias (grises si no obtenidas, color si obtenidas).
 
 ## 🧩 Componentes Svelte importantes
 

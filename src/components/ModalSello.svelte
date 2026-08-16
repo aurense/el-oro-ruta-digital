@@ -50,7 +50,7 @@
     }
 
     function irAlPunto() {
-        window.location.href = `/punto/${punto.id}`;
+        window.location.href = `/punto/${punto.id}?origen=sello`;
     }
 
     onMount(() => {
