@@ -340,18 +340,19 @@
 </div>
 
 <!-- Modal de celebración (obtenido) o Tooltip de indicaciones (no visitado) -->
-{#if puntoModal}
-    {@const obtenida = sellos.some((s) => s.puntoId === puntoModal?.id)}
-    {#if obtenida}
-        {@const sello = sellos.find((s) => s.puntoId === puntoModal?.id)}
-        <ModalSello
-            punto={puntoModal}
-            fechaObtenida={sello?.fecha ?? null}
-            totalSellos={obtenidos}
-            totalPuntos={total}
-            on:cerrar={cerrarModal}
-        />
-    {:else}
+{#if true}
+    {@const esObtenida = Boolean(puntoModal && sellos.some((s) => s.puntoId === puntoModal?.id))}
+    {@const selloActual = puntoModal ? sellos.find((s) => s.puntoId === puntoModal?.id) : null}
+    <ModalSello
+        visible={esObtenida}
+        punto={puntoModal}
+        fechaObtenida={selloActual?.fecha ?? null}
+        totalSellos={obtenidos}
+        totalPuntos={total}
+        on:cerrar={cerrarModal}
+    />
+
+    {#if puntoModal && !esObtenida}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div class="tooltip-overlay" on:click={cerrarModal}></div>

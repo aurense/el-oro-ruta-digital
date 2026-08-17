@@ -117,26 +117,27 @@ npx serve dist
 ```
 /
 ├── public/               # Archivos estáticos (audio, imágenes, JSON)
+│   ├── data/             # JSON de estados y municipios de México
 │   ├── sw.js             # Service Worker manual
 │   └── registerSW.js     # Registro del SW
 ├── src/
 │   ├── components/       # Componentes Svelte
 │   │   ├── AudioPlayer.svelte      # Reproductor con avance bloqueado
-│   │   ├── Trivia.svelte           # Modal de trivia con <dialog>
-│   │   ├── DataForm.svelte         # Modal de datos de perfil
-│   │   ├── RutaMapa.svelte         # Mapa SVG interactivo de la ruta
-│   │   ├── StampCollection.svelte  # Colección de sellos con progreso
-│   │   ├── StampBadge.svelte       # Insignia individual
-│   │   ├── ModalSello.svelte       # Modal de celebración con confetti
+│   │   ├── Trivia.svelte           # Modal de trivia interactivo con vidas y feedback
+│   │   ├── DataForm.svelte         # Modal overlay de registro para el 1er sello
+│   │   ├── RutaMapa.svelte         # Mapa SVG interactivo de la ruta minera
+│   │   ├── StampCollection.svelte  # Colección de sellos + Voucher Dorado de Recompensa
+│   │   ├── StampBadge.svelte       # Insignia individual con estado obtenido/bloqueado
+│   │   ├── ModalSello.svelte       # Modal de celebración con aura y confetti
 │   │   ├── PuntoPage.svelte        # Página completa del punto turístico
-│   │   ├── PerfilPage.svelte       # Vista/edición del perfil
-│   │   ├── SelectoresUbicacion.svelte  # Selectores país/estado/municipio
+│   │   ├── PerfilPage.svelte       # Vista/edición del perfil y privacidad
+│   │   ├── SelectoresUbicacion.svelte  # Selectores de país/estado/municipio
 │   │   └── admin/                  # Panel de administración
 │   ├── data/             # Datos estáticos de los puntos (puntos.ts)
 │   ├── layouts/          # Layouts de Astro (BaseLayout, AdminLayout)
-│   ├── lib/              # Lógica de Firebase, autenticación, DB, estadísticas
+│   ├── lib/              # Lógica de Firebase, autenticación, DB, persistencia, estadísticas
 │   ├── pages/            # Páginas de Astro (index, punto/[id], perfil, admin)
-│   └── stores/           # Store Svelte para el usuario
+│   └── stores/           # Store Svelte para el usuario (user.ts)
 ├── astro.config.mjs      # Configuración de Astro
 ├── firebase.json         # Configuración de Firebase Hosting
 └── package.json

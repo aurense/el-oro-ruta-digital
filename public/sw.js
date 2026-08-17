@@ -1,33 +1,37 @@
-// public/sw.js
-const CACHE_NAME = 'pasaporte-eloro-v3'; // aumentamos versión para forzar actualización
+// public/sw.js - Service Worker Optimizado para Pasaporte El Oro
+const CACHE_NAME = 'pasaporte-eloro-v4';
 
-// Archivos que DEBEN estar precacheados para funcionar offline sin necesidad de haberlos visitado antes
+// Recursos esenciales para funcionamiento offline 100% autónomo
 const PRECACHE_URLS = [
-    // Páginas principales
+    // Rutas de navegación principales
     '/',
     '/perfil',
     '/punto/palacio-municipal',
     '/punto/teatro-juarez',
     '/punto/tiro-norte',
     '/manifest.webmanifest',
-    // Iconos
+    '/favicon.svg',
+    '/favicon.ico',
+
+    // Iconos de la PWA
     '/icon-192.png',
     '/icon-512.png',
-    // Punto de prueba - multimedia
+
+    // Imágenes e insignias de los puntos
     '/img/miniatura-palacio-municipal.png',
     '/img/insignia-palacio-municipal.png',
     '/img/miniatura-teatro-juarez.png',
     '/img/insignia-teatro-juarez.png',
     '/img/miniatura-tiro-norte.png',
     '/img/insignia-tiro-norte.png',
-    '/img/test-logro.png',
+
+    // Audios de relatos históricos
     '/audio/audio-palacio-municipal.mp3',
     '/audio/audio-teatro-juarez.mp3',
     '/audio/audio-tiro-norte.mp3',
-    // Datos geográficos
-    '/data/paises.json',
+
+    // Datos geográficos offline
     '/data/estados-mexico.json',
-    // Lista de municipios 
     '/data/municipios/aguascalientes.json',
     '/data/municipios/baja-california-sur.json',
     '/data/municipios/baja-california.json',
@@ -62,58 +66,154 @@ const PRECACHE_URLS = [
     '/data/municipios/zacatecas.json'
 ];
 
-// Instalación: precaching de recursos esenciales
+// Instalación: Precaching resiliente (no falla si un asset individual tuviera problemas)
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
-            console.log('[SW] Precaching recursos esenciales');
-            return cache.addAll(PRECACHE_URLS).catch(err => {
-                console.error('[SW] Falló precaching de algunos recursos:', err);
+        caches.open(CACHE_NAME).then(async cache => {
+            console.log('[SW] Precaching recursos esenciales de Pasaporte El Oro...');
+            const fetchPromises = PRECACHE_URLS.map(async url => {
+                try {
+                    const response = await fetch(url, { cache: 'no-cache' });
+                    if (response.ok) {
+                        await cache.put(url, response);
+                    }
+                } catch (err) {
+                    console.warn(`[SW] No se pudo precachear: ${url}`, err);
+                }
             });
+            await Promise.all(fetchPromises);
         })
     );
     self.skipWaiting();
 });
 
-// Activación: limpiar caches viejos
+// Activación: Limpieza de versiones previas del caché
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(
-                keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+                keys.filter(key => key !== CACHE_NAME).map(key => {
+                    console.log(`[SW] Eliminando caché obsoleto: ${key}`);
+                    return caches.delete(key);
+                })
             );
         })
     );
     self.clients.claim();
 });
 
-// Estrategia de fetch: Cache First, luego red (y guardar en caché para la próxima)
+// Manejador de Range Requests para audio en Safari iOS y navegadores móviles
+async function handleRangeRequest(request, cache) {
+    const cachedResponse = await cache.match(request.url, { ignoreSearch: true });
+    if (!cachedResponse) {
+        return fetch(request);
+    }
+
+    const rangeHeader = request.headers.get('range');
+    if (!rangeHeader) {
+        return cachedResponse;
+    }
+
+    const arrayBuffer = await cachedResponse.arrayBuffer();
+    const bytesMatch = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+    if (!bytesMatch) {
+        return cachedResponse;
+    }
+
+    const total = arrayBuffer.byteLength;
+    const start = parseInt(bytesMatch[1], 10);
+    const end = bytesMatch[2] ? parseInt(bytesMatch[2], 10) : total - 1;
+
+    if (start >= total || end >= total) {
+        return new Response(null, {
+            status: 416,
+            statusText: 'Range Not Satisfiable',
+            headers: { 'Content-Range': `bytes */${total}` }
+        });
+    }
+
+    const slicedBuffer = arrayBuffer.slice(start, end + 1);
+    return new Response(slicedBuffer, {
+        status: 206,
+        statusText: 'Partial Content',
+        headers: {
+            'Content-Type': cachedResponse.headers.get('Content-Type') || 'audio/mpeg',
+            'Content-Range': `bytes ${start}-${end}/${total}`,
+            'Content-Length': String(slicedBuffer.byteLength),
+            'Accept-Ranges': 'bytes'
+        }
+    });
+}
+
+// Estrategia de Fetch
 self.addEventListener('fetch', event => {
-    // Ignorar peticiones a Firebase
-    if (event.request.url.includes('firestore.googleapis.com') ||
-        event.request.url.includes('identitytoolkit.googleapis.com') ||
-        event.request.url.includes('securetoken.googleapis.com')) {
+    const { request } = event;
+    const url = new URL(request.url);
+
+    // 1. Ignorar esquemas no HTTP (ej. chrome-extension://) y peticiones que no sean GET
+    if (!url.protocol.startsWith('http') || request.method !== 'GET') {
         return;
     }
 
-    // Para cualquier otro recurso, intentar servir de caché, si no, ir a red y cachear
+    // 2. Ignorar APIs dinámicas de Firebase Auth / Firestore (tienen su propia persistencia IndexedDB)
+    if (
+        url.hostname.includes('firestore.googleapis.com') ||
+        url.hostname.includes('identitytoolkit.googleapis.com') ||
+        url.hostname.includes('securetoken.googleapis.com')
+    ) {
+        return;
+    }
+
+    // 3. Manejo especial de audio con soporte de Range Requests
+    if (url.pathname.endsWith('.mp3') || request.headers.has('range')) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(cache => handleRangeRequest(request, cache))
+        );
+        return;
+    }
+
+    // 4. Navegación HTML (páginas): Network First con fallback a Cache (ignoreSearch para QR)
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request)
+                .then(networkResponse => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const copy = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+                    }
+                    return networkResponse;
+                })
+                .catch(async () => {
+                    // Fallback a caché ignorando parámetros como ?origen=qr
+                    const cached = await caches.match(request, { ignoreSearch: true });
+                    if (cached) return cached;
+
+                    // Probar variante con o sin barra final
+                    const cleanPath = url.pathname.replace(/\/$/, '') || '/';
+                    const fallback = await caches.match(cleanPath, { ignoreSearch: true });
+                    if (fallback) return fallback;
+
+                    return new Response(
+                        '<h1>Sin conexión</h1><p>Estás en modo offline. Visita los puntos guardados en tu pasaporte.</p>',
+                        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+                    );
+                })
+        );
+        return;
+    }
+
+    // 5. Assets estáticos (CSS, JS, imágenes, fuentes, JSON): Cache First con actualización en segundo plano
     event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
+        caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
             if (cachedResponse) {
                 return cachedResponse;
             }
-            return fetch(event.request).then(networkResponse => {
-                // Solo cachear respuestas exitosas y peticiones GET
-                if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseClone);
-                    });
+            return fetch(request).then(networkResponse => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const copy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
                 }
                 return networkResponse;
-            }).catch(() => {
-                // Si no hay red y no está en caché, podrías devolver una página offline (opcional)
-                return new Response('Recurso no disponible sin conexión', { status: 503 });
             });
         })
     );

@@ -173,22 +173,32 @@ Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.
 
 ### `Trivia.svelte`
 - Props: `pregunta`, `opciones`, `puntoId`.
-- 3 intentos por día (guardados en `localStorage`).
-- Emite eventos `success` o `failed`.
+- 4 intentos por día (guardados en `localStorage`).
+- Retroalimentación visual inmediata (sacudida en fallos, rebote en aciertos, insignias de letras interactivas).
+- Emite eventos `success` (con delay para apreciar la animación) o `failed`, y `cerrar`.
 
 ### `SelectoresUbicacion.svelte`
-- País: lista fija de países frecuentes + "Otro" con campo de texto.
-- Si país = México → listas desplegables de estados y municipios (archivos JSON cacheados).
-- Otro país → campos de texto para estado y ciudad.
+- País: lista fija de países frecuentes + "Otro" con campo de texto manual.
+- Si país = México → listas desplegables encadenadas de estados y municipios (archivos JSON precacheados para modo offline).
+- Otro país → campos de texto para estado/provincia y ciudad/municipio.
 - Emite evento `change` con `{ pais, estado, municipio }`.
 
 ### `DataForm.svelte`
-- Modal que contiene `SelectoresUbicacion` y rango de edad.
-- Checkbox de consentimiento de privacidad.
-- Emite evento `save` con los datos del perfil.
+- Modal tipo overlay (`fixed` con `backdrop-filter: blur(8px)`) compatible 100% con navegadores móviles, WebViews de escáneres QR y despliegues en Firebase Hosting.
+- Contiene `SelectoresUbicacion` y selector de rango de edad.
+- Checkbox de consentimiento y aviso de privacidad turística.
+- Emite evento `save` con los datos del perfil para desbloquear el primer sello.
+
+### `StampCollection.svelte`
+- Colección de sellos e insignias con barra de experiencia/progreso.
+- Al completar el 100% de los sellos (`obtenidos === total`), despliega el **Voucher Dorado de Recompensa**:
+  - Badge *Logro Desbloqueado: Explorador Maestro*.
+  - Emblema con aura animada y ticket estilo vintage minero.
+  - Canjeable por un **Café de Cortesía** en el **Restaurante «La Gran Sociedad»**.
+  - Estado de validez en vivo (`status-dot` pulsante) y código de validación digital (`PASAPORTE-ELORO-OK`).
 
 ### `PerfilPage.svelte`
-- Vista/edición de los datos de perfil, con aviso de privacidad.
+- Vista y edición de los datos de perfil del usuario, con aviso de privacidad.
 
 ## 🛡️ Panel de administración
 - **Ruta**: `/admin`
@@ -200,10 +210,14 @@ Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.
   - Los archivos se alojan en `public/` o en un CDN externo.
 
 ## 📴 PWA y funcionamiento offline
-- **Service Worker manual**: `public/sw.js` con lista de precache (`PRECACHE_URLS`) que incluye páginas, audio, imágenes y JSON de ubicaciones.
+- **Service Worker (`public/sw.js` v4)**:
+  - **Precaching resiliente**: Descarga y almacena todas las páginas principales, audios, imágenes y datos geográficos sin fallar en lote si un recurso aislado falla.
+  - **Soporte de Range Requests (HTTP 206)**: Permite que el reproductor de audio funcione de forma fluida y sin bloqueos en iOS Safari y navegadores móviles en modo 100% offline.
+  - **Estrategia para navegación HTML**: *Network-First* con fallback a caché usando `ignoreSearch: true`, permitiendo que el escaneo de códigos QR (`?origen=qr`) funcione sin conexión.
+  - **Estrategia para assets estáticos**: *Cache-First* con actualización transparente en segundo plano.
 - **Registro**: `public/registerSW.js` cargado en `BaseLayout.astro`.
-- **Firestore offline**: habilitado con `enableIndexedDbPersistence` (se llama en `BaseLayout.astro`).
-- **Sin conexión**: los sellos y datos de perfil se guardan localmente y se sincronizan al reconectar.
+- **Firestore offline**: Habilitado con persistencia local en IndexedDB.
+- **Sin conexión**: Los sellos y datos de perfil se guardan localmente y se sincronizan al reconectar.
 
 ## 🚀 Despliegue en Firebase Hosting
 1. `firebase login`
@@ -211,11 +225,11 @@ Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.
 3. `npm run build`
 4. `firebase deploy --only hosting`
 
-El archivo `firebase.json` incluye un rewrite para SPA (opcional, pero no afecta a las rutas de la API de Firebase).
+El archivo `firebase.json` incluye configuración limpia para servir los assets estáticos generados por Astro.
 
 ## 🧪 Comandos útiles
 ```bash
-npm run dev            # desarrollo local
+npm run dev            # desarrollo local (http://localhost:4321)
 npm run build          # construcción para producción
 npx serve dist         # servir la build localmente (prueba offline)
 node generar-datos-mexico.mjs  # generar JSON de estados y municipios
@@ -227,15 +241,15 @@ node generar-datos-mexico.mjs  # generar JSON de estados y municipios
 | `auth/configuration-not-found` | Proveedor anónimo no habilitado en Firebase Auth | Habilitar en consola Firebase |
 | `[GetStaticPathsRequired]` en ruta dinámica de admin | Astro requiere `getStaticPaths()` o `prerender = false` | Cambiar a ruta con query string y componente Svelte (`/admin/puntos?edit=id`) |
 | "No tienes permisos de administrador" al hacer login | Función `isAdmin()` en reglas de Firestore no reconoce el UID | Verificar que el UID esté en la lista de las reglas y en `adminAuth.ts` |
-| Service Worker no se registra (404 en `sw.js`) | `vite-plugin-pwa` no compatible con Astro 7 | Usar Service Worker manual (`public/sw.js`) y registro explícito |
+| Estilos no se muestran en modales tras despliegue | Uso de `<dialog>` nativo en top layer pierde herencia de tokens en móviles | Usar contenedor overlay con `position: fixed` y clases CSS con fallbacks |
+| Service Worker no se registra (404 en `sw.js`) | Archivo SW no ubicado en raíz pública | Usar Service Worker manual (`public/sw.js`) y registro explícito |
 | Audio no se reproduce offline | Audio no incluido en precache | Añadir URL del audio en `PRECACHE_URLS` de `sw.js` |
 
 ## 🌟 Mejoras futuras (post‑MVP)
 - Activar multi‑idioma (inglés, mazahua).
 - Diploma descargable (canvas) y enlace público compartible.
-- Dashboard de estadísticas con gráficos (Chart.js).
+- Dashboard de estadísticas con gráficos interactivos.
 - Sincronización offline con `workbox-background-sync` para una cola explícita.
-- Migrar a `FirestoreSettings.cache` cuando la API se estabilice.
 - Generación automática de QR para cada punto.
 ```
 

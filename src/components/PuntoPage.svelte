@@ -391,9 +391,7 @@
     {/if}
 
     <!-- Modal de datos de perfil -->
-    {#if mostrarDataForm}
-        <DataForm on:save={onPerfilGuardado} />
-    {/if}
+    <DataForm visible={mostrarDataForm} on:save={onPerfilGuardado} />
 </div>
 
 <style>

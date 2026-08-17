@@ -198,6 +198,42 @@
         color: var(--gold-bright);
       }
 
+      /* ─── Modales globales (DataForm / ModalSello / Overlays) ──── */
+      .dataform-overlay,
+      .modal-sello-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 1000 !important;
+        background: rgba(10, 5, 2, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 16px !important;
+        box-sizing: border-box !important;
+      }
+      .dataform-panel {
+        position: relative !important;
+        z-index: 2 !important;
+        background: linear-gradient(160deg, var(--bg-card) 0%, #2a1a0a 100%) !important;
+        border: 1px solid var(--border-gold) !important;
+        border-radius: var(--radius-lg, 22px) !important;
+        padding: 24px 20px 22px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        max-width: min(92vw, 440px) !important;
+        width: 100% !important;
+        max-height: min(90vh, 650px) !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+        box-shadow:
+          0 0 0 1px rgba(212, 160, 23, 0.08),
+          0 24px 60px rgba(0, 0, 0, 0.8),
+          0 0 50px rgba(212, 160, 23, 0.1) !important;
+      }
+
       /* ─── Scrollbar personalizada ────────────────────────────────── */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: var(--bg-primary); }

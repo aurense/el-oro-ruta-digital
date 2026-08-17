@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { createEventDispatcher } from "svelte";
 
-    export let paisInicial: string = "";
+    export let paisInicial: string = "México";
     export let estadoInicial: string = "";
     export let municipioInicial: string = "";
 
@@ -26,7 +26,7 @@
     let estadosMexico: { nombre: string; municipios_url: string }[] = [];
     let municipiosActuales: string[] = [];
 
-    let paisSeleccionado: string = "";
+    let paisSeleccionado: string = paisInicial || "México";
     let paisManual: string = ""; // solo cuando paisSeleccionado === 'Otro'
     let estadoSeleccionado: string = "";
     let municipioSeleccionado: string = "";

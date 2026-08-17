@@ -2,6 +2,8 @@
     import { createEventDispatcher } from "svelte";
     import SelectoresUbicacion from "./SelectoresUbicacion.svelte";
 
+    export let visible: boolean = true;
+
     const dispatch = createEventDispatcher();
 
     let rangoEdad = "";
@@ -50,6 +52,7 @@
         consentimiento;
 </script>
 
+{#if visible}
 <div
     class="dataform-overlay"
     role="dialog"
@@ -132,6 +135,7 @@
         </button>
     </div>
 </div>
+{/if}
 
 <style>
     /* ─── Overlay garantizado para producción / móviles ───────────── */

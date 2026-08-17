@@ -2,14 +2,14 @@
     import { onMount, createEventDispatcher } from "svelte";
     import type { PuntoData } from "../data/puntos";
 
-    export let punto: PuntoData;
-    export let fechaObtenida: Date | null;
-    export let totalSellos: number;
-    export let totalPuntos: number;
+    export let punto: PuntoData | null = null;
+    export let fechaObtenida: Date | null = null;
+    export let totalSellos: number = 0;
+    export let totalPuntos: number = 3;
+    export let visible: boolean = true;
 
     const dispatch = createEventDispatcher();
 
-    let dialogEl: HTMLDialogElement;
     let confettiPiezas: {
         x: number;
         color: string;
@@ -51,26 +51,32 @@
     }
 
     function cerrar() {
-        dialogEl?.close();
+        dispatch("cerrar");
     }
 
     function irAlPunto() {
-        window.location.href = `/punto/${punto.id}?origen=sello`;
+        if (punto) {
+            window.location.href = `/punto/${punto.id}?origen=sello`;
+        }
     }
 
     onMount(() => {
         generarConfetti();
-        dialogEl?.showModal();
     });
+
+    $: if (visible && punto) {
+        generarConfetti();
+    }
 </script>
 
-<!-- Escuchar el evento nativo "close" del <dialog> para notificar al padre -->
-<dialog
-    bind:this={dialogEl}
-    class="modal-sello"
-    on:close={() => dispatch("cerrar")}
+{#if visible && punto}
+<!-- Contenedor overlay para producción/móviles -->
+<div
+    class="modal-sello-overlay"
+    role="dialog"
+    aria-modal="true"
     on:click|self={cerrar}
-    aria-label="Sello obtenido: {punto.nombre}"
+    aria-label="Sello desbloqueado: {punto.nombre}"
 >
     <!-- Confetti -->
     <div class="confetti-container" aria-hidden="true">
@@ -109,7 +115,7 @@
         </div>
 
         <!-- Textos de celebración -->
-        <p class="etiqueta-titulo">¡SELLO OBTENIDO!</p>
+        <p class="etiqueta-titulo">¡SELLO DESBLOQUEADO!</p>
         <h2 class="nombre-punto">{punto.nombre}</h2>
 
         {#if fechaObtenida}
@@ -134,40 +140,23 @@
             <button class="btn-secundario" on:click={cerrar}> Cerrar </button>
         </div>
     </div>
-</dialog>
+</div>
+{/if}
 
 <style>
-    /* ─── Dialog nativo ──────────────────────────────────────────── */
-    .modal-sello {
-        /* Reset de estilos por defecto del <dialog> */
-        border: none;
-        padding: 0;
-        background: transparent;
-        max-width: min(90vw, 360px);
-        width: 100%;
-        overflow: visible;
-    }
-
-    /* Backdrop oscuro con blur */
-    .modal-sello::backdrop {
-        background: rgba(10, 5, 2, 0.82);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-    }
-
-    /* Entrada del modal */
-    .modal-sello[open] {
-        animation: entrar-modal 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-    @keyframes entrar-modal {
-        from {
-            opacity: 0;
-            transform: scale(0.85) translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
+    /* ─── Overlay para producción y móviles ──────────────────────── */
+    .modal-sello-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(10, 5, 2, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
     }
 
     /* ─── Confetti ───────────────────────────────────────────────── */
