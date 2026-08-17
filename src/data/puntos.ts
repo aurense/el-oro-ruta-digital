@@ -20,11 +20,12 @@ export interface PuntoData {
         opciones: { texto: string; correcta: boolean }[];
     };
     insigniaURL: string;
-    /** Posición en el SVG del mapa (viewport 0–400 × 0–300) */
+    /** Posición en el SVG del mapa (viewport 0–400 × 0–300) y estilo vectorial */
     mapa: {
         x: number;
         y: number;
         icono: string;
+        tipo: "palacio" | "teatro" | "tiro";
     };
     /** Coordenadas GPS reales — para abrir la app de mapas del dispositivo */
     coordenadas: {
@@ -51,7 +52,7 @@ export const puntos: PuntoData[] = [
             ]
         },
         "insigniaURL": "/img/insignia-palacio-municipal.png",
-        "mapa": { "x": 200, "y": 220, "icono": "🏛️" },
+        "mapa": { "x": 200, "y": 220, "icono": "🏛️", "tipo": "palacio" },
         "coordenadas": { "lat": 19.8029, "lng": -100.1308 }
     },
     {
@@ -71,7 +72,7 @@ export const puntos: PuntoData[] = [
             ]
         },
         "insigniaURL": "/img/insignia-teatro-juarez.png",
-        "mapa": { "x": 135, "y": 155, "icono": "🎭" },
+        "mapa": { "x": 135, "y": 155, "icono": "🎭", "tipo": "teatro" },
         "coordenadas": { "lat": 19.8034, "lng": -100.1315 }
     },
     {
@@ -91,7 +92,7 @@ export const puntos: PuntoData[] = [
             ]
         },
         "insigniaURL": "/img/insignia-tiro-norte.png",
-        "mapa": { "x": 295, "y": 75, "icono": "⛏️" },
+        "mapa": { "x": 295, "y": 75, "icono": "⛏️", "tipo": "tiro" },
         "coordenadas": { "lat": 19.8055, "lng": -100.1290 }
     }
 ];

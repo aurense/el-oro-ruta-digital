@@ -20,9 +20,14 @@
     }[] = [];
 
     const colores = [
-        "#F2C94C", "#D4A017", "#E07B39",
-        "#F5C87A", "#ffffff", "#FFC107",
-        "#FF9800", "#FFEB3B",
+        "#F2C94C",
+        "#D4A017",
+        "#E07B39",
+        "#F5C87A",
+        "#ffffff",
+        "#FFC107",
+        "#FF9800",
+        "#FFEB3B",
     ];
 
     function generarConfetti() {
@@ -88,7 +93,9 @@
     <!-- Panel central -->
     <div class="modal-panel">
         <!-- Botón cerrar -->
-        <button class="btn-cerrar" on:click={cerrar} aria-label="Cerrar">✕</button>
+        <button class="btn-cerrar" on:click={cerrar} aria-label="Cerrar"
+            >✕</button
+        >
 
         <!-- Badge con aura -->
         <div class="badge-wrapper">
@@ -122,11 +129,9 @@
         <!-- Acciones -->
         <div class="acciones">
             <button class="btn-historia" on:click={irAlPunto}>
-                ▶ Ver historia
+                ▶ Visitar nuevamente
             </button>
-            <button class="btn-secundario" on:click={cerrar}>
-                Cerrar
-            </button>
+            <button class="btn-secundario" on:click={cerrar}> Cerrar </button>
         </div>
     </div>
 </dialog>
@@ -155,8 +160,14 @@
         animation: entrar-modal 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     @keyframes entrar-modal {
-        from { opacity: 0; transform: scale(0.85) translateY(20px); }
-        to   { opacity: 1; transform: scale(1)    translateY(0); }
+        from {
+            opacity: 0;
+            transform: scale(0.85) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
     }
 
     /* ─── Confetti ───────────────────────────────────────────────── */
@@ -174,16 +185,25 @@
         animation: caer-confetti linear forwards;
     }
     @keyframes caer-confetti {
-        0%   { transform: translateY(0)     rotate(0deg)   scaleX(1);  opacity: 1; }
-        50%  { transform: translateY(50vh)  rotate(360deg) scaleX(-1); opacity: 1; }
-        100% { transform: translateY(105vh) rotate(720deg) scaleX(-1); opacity: 0; }
+        0% {
+            transform: translateY(0) rotate(0deg) scaleX(1);
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(50vh) rotate(360deg) scaleX(-1);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(105vh) rotate(720deg) scaleX(-1);
+            opacity: 0;
+        }
     }
 
     /* ─── Panel central ──────────────────────────────────────────── */
     .modal-panel {
         position: relative;
         z-index: 2;
-        background: linear-gradient(160deg, #1E1008 0%, #2A1A0A 100%);
+        background: linear-gradient(160deg, #1e1008 0%, #2a1a0a 100%);
         border: 1px solid rgba(212, 160, 23, 0.45);
         border-radius: 24px;
         padding: 32px 24px 28px;
@@ -205,7 +225,7 @@
         right: 16px;
         background: transparent;
         border: none;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         font-size: 1rem;
         cursor: pointer;
         width: 28px;
@@ -217,8 +237,8 @@
         transition: all 0.15s;
     }
     .btn-cerrar:hover {
-        background: rgba(255,255,255,0.06);
-        color: var(--text-primary, #F5E6C8);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary, #f5e6c8);
     }
 
     /* ─── Badge con aura ─────────────────────────────────────────── */
@@ -254,7 +274,9 @@
         animation: girar-aura 5.5s linear infinite reverse;
     }
     @keyframes girar-aura {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .insignia {
@@ -268,17 +290,27 @@
         filter: drop-shadow(0 0 18px rgba(242, 201, 76, 0.55));
     }
     @keyframes revelar-insignia {
-        from { transform: scale(0) rotate(-20deg); opacity: 0; }
-        to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+        from {
+            transform: scale(0) rotate(-20deg);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
     }
 
     /* ─── Textos ─────────────────────────────────────────────────── */
     .etiqueta-titulo {
-        font-family: 'Cinzel', serif;
+        font-family: "Cinzel", serif;
         font-size: 1.2rem;
         font-weight: 700;
         letter-spacing: 2px;
-        background: linear-gradient(135deg, var(--gold-bright, #F2C94C), var(--gold-mid, #D4A017));
+        background: linear-gradient(
+            135deg,
+            var(--gold-bright, #f2c94c),
+            var(--gold-mid, #d4a017)
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -289,31 +321,37 @@
     .nombre-punto {
         font-size: 1rem;
         font-weight: 500;
-        color: var(--text-primary, #F5E6C8);
+        color: var(--text-primary, #f5e6c8);
         margin: 0;
         animation: fadeup 0.4s 0.4s both;
     }
 
     .fecha {
         font-size: 0.78rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         margin: 0;
         animation: fadeup 0.4s 0.45s both;
     }
 
     .progreso {
         font-size: 0.82rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         margin: 0;
         animation: fadeup 0.4s 0.5s both;
     }
     .progreso-num {
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
     }
 
     @keyframes fadeup {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     /* ─── Acciones ───────────────────────────────────────────────── */
@@ -331,9 +369,13 @@
         padding: 13px;
         border-radius: 999px;
         border: none;
-        background: linear-gradient(135deg, var(--gold-mid, #D4A017), var(--gold-bright, #F2C94C));
-        color: #12090A;
-        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+            135deg,
+            var(--gold-mid, #d4a017),
+            var(--gold-bright, #f2c94c)
+        );
+        color: #12090a;
+        font-family: "Inter", sans-serif;
         font-weight: 700;
         font-size: 0.9rem;
         cursor: pointer;
@@ -344,7 +386,9 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 24px rgba(212, 160, 23, 0.5);
     }
-    .btn-historia:active { transform: translateY(0); }
+    .btn-historia:active {
+        transform: translateY(0);
+    }
 
     .btn-secundario {
         width: 100%;
@@ -352,14 +396,14 @@
         border-radius: 999px;
         border: 1px solid rgba(212, 160, 23, 0.25);
         background: transparent;
-        color: var(--text-muted, #A08060);
-        font-family: 'Inter', sans-serif;
+        color: var(--text-muted, #a08060);
+        font-family: "Inter", sans-serif;
         font-size: 0.85rem;
         cursor: pointer;
         transition: all 0.2s;
     }
     .btn-secundario:hover {
-        color: var(--text-primary, #F5E6C8);
+        color: var(--text-primary, #f5e6c8);
         border-color: rgba(212, 160, 23, 0.5);
         background: rgba(212, 160, 23, 0.06);
     }

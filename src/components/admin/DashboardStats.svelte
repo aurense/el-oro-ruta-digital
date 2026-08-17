@@ -28,6 +28,10 @@
         <ul>
             {#each datos.porEdad as e}<li>{e.rango}: {e.total}</li>{/each}
         </ul>
+        <h4>Canal de Visita</h4>
+        <ul>
+            {#each datos.porCanal as c}<li>{c.canal.toUpperCase()}: {c.total}</li>{/each}
+        </ul>
     {/if}
 </div>
 

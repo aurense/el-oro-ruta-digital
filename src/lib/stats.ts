@@ -12,6 +12,7 @@ export async function obtenerEstadisticas() {
     const conteoPuntos: Record<string, number> = {};
     const conteoOrigen: Record<string, number> = {};
     const conteoEdad: Record<string, number> = {};
+    const conteoCanal: Record<string, number> = { qr: 0, sello: 0, desconocido: 0 };
 
     usuariosSnap.forEach(doc => {
         const data = doc.data();
@@ -20,6 +21,8 @@ export async function obtenerEstadisticas() {
         (data.sellos || []).forEach((s: any) => {
             totalVisitas++;
             conteoPuntos[s.puntoId] = (conteoPuntos[s.puntoId] || 0) + 1;
+            const canal = s.origen || 'desconocido';
+            conteoCanal[canal] = (conteoCanal[canal] || 0) + 1;
         });
     });
 
@@ -30,6 +33,7 @@ export async function obtenerEstadisticas() {
         totalVisitas,
         porPunto,
         porOrigen: Object.entries(conteoOrigen).map(([pais, total]) => ({ pais, total })),
-        porEdad: Object.entries(conteoEdad).map(([rango, total]) => ({ rango, total }))
+        porEdad: Object.entries(conteoEdad).map(([rango, total]) => ({ rango, total })),
+        porCanal: Object.entries(conteoCanal).map(([canal, total]) => ({ canal, total }))
     };
 }

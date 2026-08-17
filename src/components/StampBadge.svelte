@@ -9,7 +9,7 @@
     const dispatch = createEventDispatcher();
 
     function handleClick() {
-        if (obtenida) dispatch("seleccionar", { puntoId });
+        dispatch("seleccionar", { puntoId, obtenida });
     }
 </script>
 
@@ -17,9 +17,9 @@
 <div
     class="badge"
     class:obtenida
-    role={obtenida ? "button" : undefined}
-    tabindex={obtenida ? 0 : undefined}
-    aria-label={obtenida ? `Ver sello obtenido: ${nombre}` : `Sello bloqueado: ${nombre}`}
+    role="button"
+    tabindex="0"
+    aria-label={obtenida ? `Ver sello obtenido: ${nombre}` : `Ver cómo desbloquear sello: ${nombre}`}
     on:click={handleClick}
     on:keydown={(e) => e.key === "Enter" && handleClick()}
 >
@@ -50,8 +50,14 @@
         border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.1));
         transition: transform 0.2s, border-color 0.3s, box-shadow 0.2s;
         position: relative;
-        cursor: default;
+        cursor: pointer;
         user-select: none;
+    }
+
+    .badge:not(.obtenida):hover {
+        transform: translateY(-3px);
+        border-color: rgba(212, 160, 23, 0.25);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     }
 
     .badge.obtenida {

@@ -73,7 +73,10 @@
             // Pausa para que el usuario aprecie el acierto antes del cambio de fase
             setTimeout(() => {
                 cerrarModal();
-                dispatch("success");
+                dispatch("success", {
+                    vidasRestantes: intentosRestantes,
+                    intentosUsados: 4 - intentosRestantes,
+                });
             }, modoRevisar ? 1000 : 750);
         } else {
             // Sacudir el botón incorrecto y registrar en opciones fallidas
@@ -90,7 +93,10 @@
                 guardarEstado();
                 setTimeout(() => {
                     cerrarModal();
-                    dispatch("failed");
+                    dispatch("failed", {
+                        vidasRestantes: 0,
+                        intentosUsados: 3,
+                    });
                 }, 900);
             } else {
                 guardarEstado();

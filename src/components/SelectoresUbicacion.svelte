@@ -214,16 +214,54 @@
 </div>
 
 <style>
+    .selectores {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
     .selectores label {
-        display: block;
-        margin: 12px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 0.82rem;
+        color: var(--text-muted, #A08060);
+        font-weight: 500;
+        margin: 0;
     }
     select,
-    input {
+    input[type="text"] {
         width: 100%;
-        padding: 8px;
-        margin-top: 4px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.22));
+        border-radius: 10px;
+        color: var(--text-primary, #F5E6C8);
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+        outline: none;
+        box-sizing: border-box;
+    }
+    select {
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4A017' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+    }
+    select option {
+        background: #1E1008;
+        color: #F5E6C8;
+    }
+    input[type="text"]::placeholder {
+        color: var(--text-dim, #6B5040);
+    }
+    select:focus,
+    input[type="text"]:focus {
+        border-color: var(--gold-mid, #D4A017);
+        box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.12);
+        background: rgba(255, 255, 255, 0.07);
     }
 </style>

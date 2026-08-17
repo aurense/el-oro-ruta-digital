@@ -8,6 +8,8 @@
         guardarDatosUsuario,
         guardarVisita,
         guardarSello,
+        registrarAudioEscuchado,
+        registrarResultadoTrivia,
     } from "../lib/db";
 
     export let punto: {
@@ -25,14 +27,22 @@
     };
     export let origen: string = "desconocido";
 
-    let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" = "audio";
+    let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" =
+        "audio";
     let mostrarDataForm = false;
     let datosPerfilGuardados = false;
     let perfilLocal = $userStore.perfil;
     let selloRecienGanado = false;
     let faseInicializada = false;
+    let intentosTriviaUsados = 1;
     // Para la animación del confetti
-    let confettiPiezas: { x: number; color: string; delay: number; duration: number; size: number }[] = [];
+    let confettiPiezas: {
+        x: number;
+        color: string;
+        delay: number;
+        duration: number;
+        size: number;
+    }[] = [];
 
     $: uid = $userStore.uid;
     $: perfil = $userStore.perfil;
@@ -56,10 +66,20 @@
     });
 
     function onAudioEnded() {
+        if (uid) {
+            registrarAudioEscuchado(uid, punto.id, origen);
+        }
         fase = yaTieneSello ? "triviaRevisit" : "trivia";
     }
 
-    function onTriviaSuccess() {
+    function onTriviaSuccess(
+        event?: CustomEvent<{ vidasRestantes?: number; intentosUsados?: number }>,
+    ) {
+        const vidas = event?.detail?.vidasRestantes ?? 3;
+        intentosTriviaUsados = event?.detail?.intentosUsados ?? (4 - vidas);
+        if (uid) {
+            registrarResultadoTrivia(uid, punto.id, true, vidas, origen);
+        }
         if (yaTieneSello) {
             fase = "selloGanado";
             return;
@@ -71,7 +91,12 @@
         }
     }
 
-    function onTriviaFailed() {
+    function onTriviaFailed(
+        event?: CustomEvent<{ vidasRestantes?: number; intentosUsados?: number }>,
+    ) {
+        if (uid) {
+            registrarResultadoTrivia(uid, punto.id, false, 0, origen);
+        }
         fase = "fallida";
     }
 
@@ -99,20 +124,45 @@
         if (!uid || yaTieneSello) return;
         selloRecienGanado = true;
         try {
-            await guardarSello(uid, punto.id, origen);
-            await guardarVisita(uid, punto.id, origen);
+            await guardarSello(uid, punto.id, origen, {
+                intentosUsados: intentosTriviaUsados,
+            });
+            await guardarVisita(uid, punto.id, origen, {
+                selloObtenido: true,
+                intentosTrivia: intentosTriviaUsados,
+                audioEscuchado: true,
+            });
             userStore.update((s) => ({
                 ...s,
-                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date(), origen }],
+                sellos: [
+                    ...s.sellos,
+                    {
+                        puntoId: punto.id,
+                        fecha: new Date(),
+                        origen,
+                        intentosUsados: intentosTriviaUsados,
+                    },
+                ],
             }));
             activarCelebracion();
         } catch (e) {
             userStore.update((s) => ({
                 ...s,
-                sellos: [...s.sellos, { puntoId: punto.id, fecha: new Date(), origen }],
+                sellos: [
+                    ...s.sellos,
+                    {
+                        puntoId: punto.id,
+                        fecha: new Date(),
+                        origen,
+                        intentosUsados: intentosTriviaUsados,
+                    },
+                ],
             }));
             activarCelebracion();
-            console.warn("El sello se guardará en el servidor cuando vuelva la conexión.", e);
+            console.warn(
+                "El sello se guardará en el servidor cuando vuelva la conexión.",
+                e,
+            );
         }
     }
 
@@ -127,9 +177,14 @@
 
     function generarConfetti() {
         const colores = [
-            "#F2C94C", "#D4A017", "#E07B39",
-            "#F5C87A", "#fff", "#FFC107",
-            "#FF9800", "#FFEB3B"
+            "#F2C94C",
+            "#D4A017",
+            "#E07B39",
+            "#F5C87A",
+            "#fff",
+            "#FFC107",
+            "#FF9800",
+            "#FFEB3B",
         ];
         confettiPiezas = Array.from({ length: 40 }, (_, i) => ({
             x: Math.random() * 100,
@@ -173,7 +228,7 @@
             on:ended={onAudioEnded}
         />
 
-    <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
+        <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
     {:else if fase === "trivia"}
         <Trivia
             pregunta={punto.trivia.pregunta}
@@ -182,10 +237,12 @@
             modoRevisar={false}
             on:success={onTriviaSuccess}
             on:failed={onTriviaFailed}
-            on:cerrar={() => { fase = "audio"; }}
+            on:cerrar={() => {
+                fase = "audio";
+            }}
         />
 
-    <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
+        <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
     {:else if fase === "triviaRevisit"}
         <Trivia
             pregunta={punto.trivia.pregunta}
@@ -194,10 +251,12 @@
             modoRevisar={true}
             on:success={onTriviaSuccess}
             on:failed={onTriviaFailed}
-            on:cerrar={() => { fase = "selloGanado"; }}
+            on:cerrar={() => {
+                fase = "selloGanado";
+            }}
         />
 
-    <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
+        <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
     {:else if fase === "selloGanado"}
         <!-- Confetti solo en la primera celebración de la sesión -->
         {#if selloRecienGanado && confettiPiezas.length > 0}
@@ -236,7 +295,8 @@
             <h2 class="celebracion-nombre">{punto.nombre}</h2>
             <p class="celebracion-contador">
                 {#if selloRecienGanado}
-                    Tu pasaporte: <strong>{sellos.length}</strong> de <strong>3</strong> sellos
+                    Tu pasaporte: <strong>{sellos.length}</strong> de
+                    <strong>3</strong> sellos
                 {:else}
                     Ya has obtenido este sello en tu pasaporte.
                 {/if}
@@ -244,41 +304,89 @@
 
             <div class="celebracion-acciones">
                 <button class="btn-gold" on:click={irAlPasaporte}>
-                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                        <circle cx="12" cy="9.5" r="2.5" fill="currentColor" fill-opacity="0.35"/>
-                        <path d="M12 7.5v4"/>
-                        <path d="M10 9.5h4"/>
+                    <svg
+                        class="btn-icono"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path
+                            d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+                        />
+                        <circle
+                            cx="12"
+                            cy="9.5"
+                            r="2.5"
+                            fill="currentColor"
+                            fill-opacity="0.35"
+                        />
+                        <path d="M12 7.5v4" />
+                        <path d="M10 9.5h4" />
                     </svg>
                     <span>Ver mi pasaporte</span>
                 </button>
                 <button class="btn-outline" on:click={verTrivia}>
-                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9.5"/>
-                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.35"/>
-                        <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
+                    <svg
+                        class="btn-icono"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <circle cx="12" cy="12" r="9.5" />
+                        <polygon
+                            points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"
+                            fill="currentColor"
+                            fill-opacity="0.35"
+                        />
+                        <circle cx="12" cy="12" r="1.3" fill="currentColor" />
                     </svg>
-                    <span>Desafío minero</span>
+                    <span>&nbsp;Desafío minero</span>
                 </button>
                 <button class="btn-outline" on:click={escucharAudio}>
-                    <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" fill-opacity="0.3"/>
-                        <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
-                        <path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6"/>
+                    <svg
+                        class="btn-icono"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M11 5L6 9H2v6h4l5 4V5z"
+                            fill="currentColor"
+                            fill-opacity="0.3"
+                        />
+                        <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                        <path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6" />
                     </svg>
-                    <span>Escuchar relato</span>
+                    <span>&nbsp; Escuchar relato</span>
                 </button>
             </div>
         </div>
 
-    <!-- ─ Fase: FALLIDA ─ -->
+        <!-- ─ Fase: FALLIDA ─ -->
     {:else if fase === "fallida"}
         <div class="fallida-card">
             <p class="fallida-icon">😞</p>
             <h2>Mejor suerte mañana</h2>
-            <p>Agotaste los intentos de hoy. Regresa mañana para intentarlo de nuevo y obtener tu sello.</p>
-            <a href="/" class="btn-outline" style="margin-top: 20px;">Volver al inicio</a>
+            <p>
+                Agotaste los intentos de hoy. Regresa mañana para intentarlo de
+                nuevo y obtener tu sello.
+            </p>
+            <a href="/" class="btn-outline" style="margin-top: 20px;"
+                >Volver al inicio</a
+            >
         </div>
     {/if}
 
@@ -325,11 +433,11 @@
         padding: 20px;
     }
     .hero-titulo {
-        font-family: 'Cinzel', serif;
+        font-family: "Cinzel", serif;
         font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
-        text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
         line-height: 1.2;
         margin: 0;
     }
@@ -360,9 +468,18 @@
         animation: caer-confetti linear forwards;
     }
     @keyframes caer-confetti {
-        0%   { transform: translateY(0)    rotate(0deg)   scaleX(1);  opacity: 1; }
-        50%  { transform: translateY(50vh) rotate(360deg) scaleX(-1); opacity: 1; }
-        100% { transform: translateY(105vh) rotate(720deg) scaleX(-1); opacity: 0; }
+        0% {
+            transform: translateY(0) rotate(0deg) scaleX(1);
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(50vh) rotate(360deg) scaleX(-1);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(105vh) rotate(720deg) scaleX(-1);
+            opacity: 0;
+        }
     }
 
     /* ─── Celebración ───────────────────────────────────────────────── */
@@ -408,7 +525,9 @@
         animation: girar-aura 5s linear infinite reverse;
     }
     @keyframes girar-aura {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .insignia-celebracion {
@@ -417,20 +536,31 @@
         object-fit: contain;
         position: relative;
         z-index: 1;
-        animation: revelar-insignia 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation: revelar-insignia 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)
+            forwards;
         filter: drop-shadow(0 0 20px rgba(242, 201, 76, 0.6));
     }
     @keyframes revelar-insignia {
-        from { transform: scale(0) rotate(-20deg); opacity: 0; }
-        to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+        from {
+            transform: scale(0) rotate(-20deg);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
     }
 
     .celebracion-etiqueta {
-        font-family: 'Cinzel', serif;
+        font-family: "Cinzel", serif;
         font-size: 1.35rem;
         font-weight: 700;
         letter-spacing: 2px;
-        background: linear-gradient(135deg, var(--gold-bright), var(--gold-mid));
+        background: linear-gradient(
+            135deg,
+            var(--gold-bright),
+            var(--gold-mid)
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -460,8 +590,14 @@
     }
 
     @keyframes fadeup {
-        from { opacity: 0; transform: translateY(12px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     /* ─── Fallida ───────────────────────────────────────────────────── */
@@ -477,9 +613,11 @@
         align-items: center;
         gap: 10px;
     }
-    .fallida-icon { font-size: 2.5rem; }
+    .fallida-icon {
+        font-size: 2.5rem;
+    }
     .fallida-card h2 {
-        font-family: 'Cinzel', serif;
+        font-family: "Cinzel", serif;
         font-size: 1.2rem;
         color: var(--text-primary);
     }
@@ -495,12 +633,16 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        background: linear-gradient(135deg, var(--gold-mid), var(--gold-bright));
+        background: linear-gradient(
+            135deg,
+            var(--gold-mid),
+            var(--gold-bright)
+        );
         color: var(--bg-primary);
         border: none;
         border-radius: var(--radius-full, 9999px);
         padding: 13px 30px;
-        font-family: 'Inter', sans-serif;
+        font-family: "Inter", sans-serif;
         font-weight: 600;
         font-size: 0.95rem;
         cursor: pointer;
@@ -518,11 +660,11 @@
         align-items: center;
         justify-content: center;
         background: transparent;
-        color: var(--gold-mid, #D4A017);
-        border: 1px solid rgba(212, 160, 23, 0.30);
+        color: var(--gold-mid, #d4a017);
+        border: 1px solid rgba(212, 160, 23, 0.3);
         border-radius: 9999px;
         padding: 11px 24px;
-        font-family: 'Inter', sans-serif;
+        font-family: "Inter", sans-serif;
         font-weight: 500;
         font-size: 0.9rem;
         cursor: pointer;
@@ -531,8 +673,8 @@
     }
     .btn-outline:hover {
         background: rgba(212, 160, 23, 0.1);
-        border-color: var(--gold-bright, #F2C94C);
-        color: var(--gold-bright, #F2C94C);
+        border-color: var(--gold-bright, #f2c94c);
+        color: var(--gold-bright, #f2c94c);
     }
 
     /* ─── Iconos vectoriales de época para botones ─────────────────── */
@@ -543,10 +685,10 @@
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .btn-gold .btn-icono {
-        color: var(--bg-primary, #12090A);
+        color: var(--bg-primary, #12090a);
     }
     .btn-outline .btn-icono {
-        color: var(--gold-mid, #D4A017);
+        color: var(--gold-mid, #d4a017);
     }
     .btn-gold:hover .btn-icono,
     .btn-outline:hover .btn-icono {
