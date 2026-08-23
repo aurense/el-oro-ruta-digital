@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import RutaMapa from "../components/RutaMapa.svelte";
 import StampCollection from "../components/StampCollection.svelte";
+import DonationButton from "../components/DonationButton.astro";
 import { puntos } from "../data/puntos";
 ---
 
@@ -9,5 +10,6 @@ import { puntos } from "../data/puntos";
 	<main>
 		<RutaMapa {puntos} client:load />
 		<StampCollection {puntos} client:load />
+		<DonationButton />
 	</main>
 </BaseLayout>

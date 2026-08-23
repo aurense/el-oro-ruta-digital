@@ -44,7 +44,7 @@ PUBLIC_FIREBASE_APP_ID=...
 Nunca se incluyen en el repositorio (agregar al `.gitignore`).
 
 ### 3. Reglas de Firestore
-```
+```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -55,9 +55,16 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /aliados/{aliadoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /visitas_aliados/{id} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null;
+    }
     match /usuarios/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
     }
   }
 }
@@ -81,10 +88,24 @@ puntos (colección)
        ├─ insigniaURL: string (URL)
        └─ activo: boolean
 
+aliados (colección)
+  └─ {aliadoId}
+       ├─ id: string (slug único, ej. "tranvia-el-oro")
+       ├─ nombre: string
+       ├─ categoria: string ("Tour" | "Restaurante" | "Taller artesanal" | "Hotel")
+       ├─ coleccion: string ("sabores" | "artesanias" | "descanso" | "aventura")
+       ├─ descripcionCorta: string
+       ├─ imagenLogo: string (URL)
+       ├─ insigniaURL: string (URL)
+       ├─ beneficio: { tipo, detalle, vigencia } (opcional)
+       ├─ activo: boolean
+       └─ orden: number
+
 usuarios (colección)
   └─ {uid}
        ├─ perfil: { pais, estado, municipio, rangoEdad }
-       ├─ sellos: [ { puntoId, fecha, origen } ]
+       ├─ sellos: [ { puntoId, fecha, origen } ] (puntos patrimoniales)
+       ├─ sellosAliados: { [aliadoId]: { fecha, origen } } (aliados comerciales)
        └─ visitas (subcolección)
             └─ {puntoId}
                  ├─ fecha: Timestamp
@@ -92,13 +113,21 @@ usuarios (colección)
                  ├─ intentosTrivia: number
                  ├─ ultimoIntento: Timestamp
                  └─ origen: string ('qr' | 'sello' | 'desconocido')
+
+visitas_aliados (colección)
+  └─ {visitaId}
+       ├─ uid: string
+       ├─ aliadoId: string
+       ├─ fecha: Timestamp
+       └─ origen: 'qr' | 'sello' | 'desconocido'
 ```
-Los puntos también pueden cargarse desde el archivo estático `src/data/puntos.ts` para máxima velocidad offline. El panel de administración escribe en Firestore, pero la PWA del turista puede leer de Firestore o del archivo local, según se configure.
+Los puntos y aliados también se cargan desde archivos estáticos (`src/data/puntos.ts`, `src/data/aliados.ts`) para máxima velocidad offline.
 
 ### 5. Parámetros de Origen de Visita
-- `?origen=qr`: Visitas iniciadas desde el escaneo de un código QR físico en un punto turístico.
-- `?origen=sello`: Visitas iniciadas desde enlaces internos del pasaporte (ej. modal de sello o mapa).
+- `?origen=qr`: Visitas iniciadas desde el escaneo de un código QR físico en un punto turístico o local aliado.
+- `?origen=sello`: Visitas iniciadas desde enlaces internos del pasaporte.
 - `desconocido`: Valor por defecto si no se especifica el parámetro.
+
 
 ## 📁 Estructura del proyecto
 ```

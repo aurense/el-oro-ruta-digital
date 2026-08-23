@@ -1,5 +1,5 @@
 // public/sw.js - Service Worker Optimizado para Pasaporte El Oro
-const CACHE_NAME = 'pasaporte-eloro-v4';
+const CACHE_NAME = 'pasaporte-eloro-v5';
 
 // Recursos esenciales para funcionamiento offline 100% autónomo
 const PRECACHE_URLS = [
@@ -9,6 +9,10 @@ const PRECACHE_URLS = [
     '/punto/palacio-municipal',
     '/punto/teatro-juarez',
     '/punto/tiro-norte',
+    '/aliado/tranvia-el-oro',
+    '/aliado/cafeteria-el-minero',
+    '/aliado/taller-plata-aurea',
+    '/aliado/hotel-casa-real',
     '/manifest.webmanifest',
     '/favicon.svg',
     '/favicon.ico',
@@ -24,6 +28,16 @@ const PRECACHE_URLS = [
     '/img/insignia-teatro-juarez.png',
     '/img/miniatura-tiro-norte.png',
     '/img/insignia-tiro-norte.png',
+
+    // Logos e insignias de aliados comerciales
+    '/img/aliados/tranvia.svg',
+    '/img/insignias/tranvia.svg',
+    '/img/aliados/cafeteria-el-minero.svg',
+    '/img/insignias/cafeteria-el-minero.svg',
+    '/img/aliados/taller-plata-aurea.svg',
+    '/img/insignias/taller-plata-aurea.svg',
+    '/img/aliados/hotel-casa-real.svg',
+    '/img/insignias/hotel-casa-real.svg',
 
     // Audios de relatos históricos
     '/audio/audio-palacio-municipal.mp3',

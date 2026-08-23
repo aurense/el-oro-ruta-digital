@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="stampBorder2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3C4"/>
+      <stop offset="50%" stop-color="#E07B39"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="#1E1008" stroke="url(#stampBorder2)" stroke-width="4"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="#E07B39" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="100" cy="100" r="72" fill="#12090A" stroke="#8B6914" stroke-width="2"/>
+  
+  <g transform="translate(100, 92) scale(0.75)">
+    <path d="M-24 -8 C-24 20, 24 20, 24 -8 Z" fill="#1E1008" stroke="#F2C94C" stroke-width="2.5"/>
+    <path d="M24 -4 C36 -4, 36 12, 24 12" fill="none" stroke="#F2C94C" stroke-width="2.5"/>
+    <ellipse cx="0" cy="20" rx="34" ry="6" fill="none" stroke="#F2C94C" stroke-width="2"/>
+    <path d="M-9 -14 Q-6 -22, -9 -30" fill="none" stroke="#E07B39" stroke-width="2" stroke-linecap="round"/>
+    <path d="M0 -18 Q4 -26, 0 -34" fill="none" stroke="#F2C94C" stroke-width="2" stroke-linecap="round"/>
+    <path d="M9 -14 Q12 -22, 9 -30" fill="none" stroke="#E07B39" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <text x="100" y="148" text-anchor="middle" font-family="'Cinzel', Georgia, serif" font-weight="700" font-size="9" fill="#F2C94C" letter-spacing="1.5">EL MINERO</text>
+  <text x="100" y="160" text-anchor="middle" font-family="'Inter', sans-serif" font-size="7" fill="#A08060" letter-spacing="1">SABORES DE EL ORO</text>
+</svg>

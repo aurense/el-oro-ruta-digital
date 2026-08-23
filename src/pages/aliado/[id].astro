@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import AliadoPage from "../../components/AliadoPage.svelte";
+import { aliados } from "../../data/aliados";
+
+export function getStaticPaths() {
+    return aliados.map((a) => ({ params: { id: a.id } }));
+}
+
+const { id } = Astro.params;
+const aliado = aliados.find((a) => a.id === id);
+const origen = Astro.url.searchParams.get("origen") || "desconocido";
+
+if (!aliado) {
+    return Astro.redirect("/404");
+}
+---
+
+<BaseLayout>
+    <AliadoPage {aliado} {origen} client:load />
+</BaseLayout>

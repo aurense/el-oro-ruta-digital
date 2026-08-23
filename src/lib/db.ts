@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, updateDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 
 // ─── Interfaces de Datos ───────────────────────────────────────────
 export interface PerfilTurista {
@@ -214,4 +214,44 @@ export async function registrarResultadoTrivia(
     } catch (e) {
         console.warn('Registro de trivia diferido para sincronización online:', e);
     }
-}
+}
+
+// ─── Gestión de Sellos de Aliados Comerciales ─────────────────────
+export async function guardarSelloAliado(
+    uid: string,
+    aliadoId: string,
+    origen: string = 'desconocido'
+) {
+    const userRef = doc(db, 'usuarios', uid);
+    const ahora = new Date().toISOString();
+    const selloAliado = {
+        fecha: ahora,
+        origen,
+    };
+    await setDoc(
+        userRef,
+        {
+            sellosAliados: {
+                [aliadoId]: selloAliado,
+            },
+            ultimaActividad: ahora,
+        },
+        { merge: true }
+    );
+}
+
+// ─── Registro de Visitas a Aliados (Estadísticas y Trazabilidad) ────
+export async function guardarVisitaAliado(
+    uid: string,
+    aliadoId: string,
+    origen: string = 'desconocido'
+) {
+    const ahora = new Date().toISOString();
+    await addDoc(collection(db, 'visitas_aliados'), {
+        uid,
+        aliadoId,
+        fecha: ahora,
+        origen,
+    });
+}
+

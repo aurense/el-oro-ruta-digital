@@ -269,6 +269,7 @@
               ...s,
               perfil: datos?.perfil || null,
               sellos: datos?.sellos || [],
+              sellosAliados: datos?.sellosAliados || {},
             }));
           } catch (e) {
             console.error("[Auth] Error al leer usuario:", e);

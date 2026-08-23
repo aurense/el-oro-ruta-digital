@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Función auxiliar para verificar si el usuario autenticado es administrador
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        'XXMmhV4uRChh6qHW5c2HhqX9xQA3' // Sustituir/añadir los UID reales de administradores
+      ];
+    }
+
+    // 1. Puntos turísticos patrimoniales
+    match /puntos/{puntoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 2. Aliados comerciales (restaurantes, talleres, hoteles, tours)
+    match /aliados/{aliadoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 3. Documento de usuario (perfil, sellos patrimoniales, sellos de aliados)
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+
+      // Subcolección de visitas detalladas por punto patrimonial
+      match /visitas/{puntoId} {
+        allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+        allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      }
+    }
+
+    // 4. Registro de visitas a aliados comerciales (trazabilidad y analíticas)
+    match /visitas_aliados/{visitaId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

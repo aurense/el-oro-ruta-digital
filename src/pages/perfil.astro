@@ -1,8 +1,12 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PerfilPage from "../components/PerfilPage.svelte";
+import DonationButton from "../components/DonationButton.astro";
 ---
 
 <BaseLayout>
-    <PerfilPage client:load />
+    <main>
+        <PerfilPage client:load />
+        <DonationButton />
+    </main>
 </BaseLayout>
