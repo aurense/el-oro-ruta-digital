@@ -3,6 +3,7 @@
     import ModalSello from "./ModalSello.svelte";
     import { userStore } from "../stores/user";
     import type { PuntoData } from "../data/puntos";
+    import { aliados } from "../data/aliados";
     import { onMount } from "svelte";
 
     export let puntos: PuntoData[];
@@ -406,12 +407,16 @@
     {@const selloActual = puntoModal
         ? sellos.find((s) => s.puntoId === puntoModal?.id)
         : null}
+    {@const aliadoDelModal = puntoModal?.voucherAliadoId
+        ? (aliados.find((a) => a.id === puntoModal?.voucherAliadoId) ?? null)
+        : null}
     <ModalSello
         visible={esObtenida}
         punto={puntoModal}
         fechaObtenida={selloActual?.fecha ?? null}
         totalSellos={obtenidos}
         totalPuntos={total}
+        aliado={aliadoDelModal}
         on:cerrar={cerrarModal}
     />
 

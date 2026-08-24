@@ -3,6 +3,8 @@
     import AudioPlayer from "./AudioPlayer.svelte";
     import Trivia from "./Trivia.svelte";
     import DataForm from "./DataForm.svelte";
+    import VoucherCard from "./VoucherCard.svelte";
+    import { aliados } from "../data/aliados";
     import { userStore } from "../stores/user";
     import {
         guardarDatosUsuario,
@@ -24,8 +26,14 @@
             opciones: { texto: string; correcta: boolean }[];
         };
         insigniaURL: string;
+        voucherAliadoId?: string;
     };
     export let origen: string = "desconocido";
+
+    // Aliado cuyo voucher se entrega al desbloquear este sello
+    $: aliadoVoucher = punto.voucherAliadoId
+        ? (aliados.find((a) => a.id === punto.voucherAliadoId) ?? null)
+        : null;
 
     let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" =
         "audio";
@@ -69,7 +77,12 @@
 
     /** Cambia de fase con una breve transición de desvanecimiento */
     async function cambiarFase(
-        nuevaFase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida",
+        nuevaFase:
+            | "audio"
+            | "trivia"
+            | "triviaRevisit"
+            | "selloGanado"
+            | "fallida",
     ) {
         zonaVisible = false;
         await new Promise((r) => setTimeout(r, 200));
@@ -82,13 +95,19 @@
             registrarAudioEscuchado(uid, punto.id, origen);
         }
         cambiarFase(yaTieneSello ? "triviaRevisit" : "trivia");
+        if ("vibrate" in navigator) {
+            navigator.vibrate([80, 40, 80, 40, 200]);
+        }
     }
 
     function onTriviaSuccess(
-        event?: CustomEvent<{ vidasRestantes?: number; intentosUsados?: number }>,
+        event?: CustomEvent<{
+            vidasRestantes?: number;
+            intentosUsados?: number;
+        }>,
     ) {
         const vidas = event?.detail?.vidasRestantes ?? 3;
-        intentosTriviaUsados = event?.detail?.intentosUsados ?? (4 - vidas);
+        intentosTriviaUsados = event?.detail?.intentosUsados ?? 4 - vidas;
         if (uid) {
             registrarResultadoTrivia(uid, punto.id, true, vidas, origen);
         }
@@ -104,7 +123,10 @@
     }
 
     function onTriviaFailed(
-        event?: CustomEvent<{ vidasRestantes?: number; intentosUsados?: number }>,
+        event?: CustomEvent<{
+            vidasRestantes?: number;
+            intentosUsados?: number;
+        }>,
     ) {
         if (uid) {
             registrarResultadoTrivia(uid, punto.id, false, 0, origen);
@@ -241,11 +263,7 @@
 <div class="punto-page">
     <!-- ─── Encabezado compacto: miniatura + nombre + descripción ─── -->
     <header class="punto-header">
-        <img
-            src={punto.imagenMiniatura}
-            alt={punto.nombre}
-            class="miniatura"
-        />
+        <img src={punto.imagenMiniatura} alt={punto.nombre} class="miniatura" />
         <div class="header-texto">
             <h1 class="header-titulo">{punto.nombre}</h1>
             <p class="header-desc">{punto.descripcionCorta}</p>
@@ -253,8 +271,11 @@
     </header>
 
     <!-- ─── Zona principal: cambia entre fases con fade ─────────── -->
-    <main class="punto-main" class:zona-visible={zonaVisible} class:zona-oculta={!zonaVisible}>
-
+    <main
+        class="punto-main"
+        class:zona-visible={zonaVisible}
+        class:zona-oculta={!zonaVisible}
+    >
         <!-- ─ Fase: AUDIO ─ -->
         {#if fase === "audio"}
             <div class="vista-fase">
@@ -265,7 +286,7 @@
                 />
             </div>
 
-        <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
+            <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
         {:else if fase === "trivia"}
             <div class="vista-fase">
                 <Trivia
@@ -279,7 +300,7 @@
                 />
             </div>
 
-        <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
+            <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
         {:else if fase === "triviaRevisit"}
             <div class="vista-fase">
                 <Trivia
@@ -293,7 +314,7 @@
                 />
             </div>
 
-        <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
+            <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
         {:else if fase === "selloGanado"}
             <div class="vista-fase vista-sello">
                 <div class="badge-wrapper">
@@ -318,6 +339,11 @@
                         Ya has obtenido este sello en tu pasaporte.
                     {/if}
                 </p>
+
+                <!-- Voucher del aliado vinculado -->
+                {#if aliadoVoucher && selloRecienGanado}
+                    <VoucherCard aliado={aliadoVoucher} tipo="celebracion" />
+                {/if}
 
                 <div class="celebracion-acciones">
                     <button class="btn-gold" on:click={irAlPasaporte}>
@@ -364,7 +390,12 @@
                                 fill="currentColor"
                                 fill-opacity="0.35"
                             />
-                            <circle cx="12" cy="12" r="1.3" fill="currentColor" />
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="1.3"
+                                fill="currentColor"
+                            />
                         </svg>
                         <span>&nbsp;Desafío minero</span>
                     </button>
@@ -392,14 +423,14 @@
                 </div>
             </div>
 
-        <!-- ─ Fase: FALLIDA ─ -->
+            <!-- ─ Fase: FALLIDA ─ -->
         {:else if fase === "fallida"}
             <div class="vista-fase vista-fallida">
                 <p class="fallida-icon">😞</p>
                 <h2>Mejor suerte mañana</h2>
                 <p>
-                    Agotaste los intentos de hoy. Regresa mañana para intentarlo de
-                    nuevo y obtener tu sello.
+                    Agotaste los intentos de hoy. Regresa mañana para intentarlo
+                    de nuevo y obtener tu sello.
                 </p>
                 <a href="/" class="btn-outline" style="margin-top: 20px;"
                     >Volver al inicio</a
@@ -455,7 +486,7 @@
         font-family: "Cinzel", serif;
         font-size: 1.15rem;
         font-weight: 700;
-        color: var(--text-primary, #F5E6C8);
+        color: var(--text-primary, #f5e6c8);
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
@@ -465,7 +496,7 @@
     .header-desc {
         margin: 0;
         font-size: 0.8rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         /* Truncar a 2 líneas */
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -606,8 +637,8 @@
         letter-spacing: 2px;
         background: linear-gradient(
             135deg,
-            var(--gold-bright, #F2C94C),
-            var(--gold-mid, #D4A017)
+            var(--gold-bright, #f2c94c),
+            var(--gold-mid, #d4a017)
         );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -617,19 +648,19 @@
     }
     .celebracion-nombre {
         font-size: 1rem;
-        color: var(--text-primary, #F5E6C8);
+        color: var(--text-primary, #f5e6c8);
         font-weight: 500;
         animation: fadeup 0.5s 0.5s both;
         margin: 0;
     }
     .celebracion-contador {
         font-size: 0.88rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         animation: fadeup 0.5s 0.6s both;
         margin: 0;
     }
     .celebracion-contador strong {
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
     }
     .celebracion-acciones {
         display: flex;
@@ -654,7 +685,7 @@
     /* ─── Fallida ───────────────────────────────────────────────── */
     .vista-fallida {
         padding: 20px;
-        background: var(--bg-card, #1E1008);
+        background: var(--bg-card, #1e1008);
         border: 1px solid rgba(224, 82, 82, 0.25);
         border-radius: var(--radius-md, 14px);
         gap: 10px;
@@ -666,12 +697,12 @@
     .vista-fallida h2 {
         font-family: "Cinzel", serif;
         font-size: 1.1rem;
-        color: var(--text-primary, #F5E6C8);
+        color: var(--text-primary, #f5e6c8);
         margin: 0;
     }
     .vista-fallida p {
         font-size: 0.88rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         line-height: 1.55;
         margin: 0;
     }
@@ -684,10 +715,10 @@
         gap: 8px;
         background: linear-gradient(
             135deg,
-            var(--gold-mid, #D4A017),
-            var(--gold-bright, #F2C94C)
+            var(--gold-mid, #d4a017),
+            var(--gold-bright, #f2c94c)
         );
-        color: var(--bg-primary, #12090A);
+        color: var(--bg-primary, #12090a);
         border: none;
         border-radius: var(--radius-full, 9999px);
         padding: 12px 26px;
@@ -709,7 +740,7 @@
         align-items: center;
         justify-content: center;
         background: transparent;
-        color: var(--gold-mid, #D4A017);
+        color: var(--gold-mid, #d4a017);
         border: 1px solid rgba(212, 160, 23, 0.3);
         border-radius: var(--radius-full, 9999px);
         padding: 10px 20px;
@@ -722,8 +753,8 @@
     }
     .btn-outline:hover {
         background: rgba(212, 160, 23, 0.1);
-        border-color: var(--gold-bright, #F2C94C);
-        color: var(--gold-bright, #F2C94C);
+        border-color: var(--gold-bright, #f2c94c);
+        color: var(--gold-bright, #f2c94c);
     }
 
     .btn-icono {

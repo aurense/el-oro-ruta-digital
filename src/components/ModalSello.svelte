@@ -1,12 +1,16 @@
 <script lang="ts">
     import { onMount, createEventDispatcher } from "svelte";
     import type { PuntoData } from "../data/puntos";
+    import type { AliadoData } from "../data/aliados";
+    import VoucherCard from "./VoucherCard.svelte";
 
     export let punto: PuntoData | null = null;
     export let fechaObtenida: Date | null = null;
     export let totalSellos: number = 0;
     export let totalPuntos: number = 3;
     export let visible: boolean = true;
+    /** Aliado cuyo voucher se muestra en este sello. Opcional. */
+    export let aliado: AliadoData | null = null;
 
     const dispatch = createEventDispatcher();
 
@@ -131,6 +135,11 @@
             <strong>{totalPuntos}</strong>
             sellos
         </p>
+
+        <!-- Voucher del aliado vinculado (si existe) -->
+        {#if aliado}
+            <VoucherCard {aliado} tipo="modal" />
+        {/if}
 
         <!-- Acciones -->
         <div class="acciones">

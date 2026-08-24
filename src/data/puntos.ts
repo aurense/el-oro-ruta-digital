@@ -32,6 +32,11 @@ export interface PuntoData {
         lat: number;
         lng: number;
     };
+    /**
+     * ID del aliado cuyo voucher/beneficio se entrega al desbloquear este sello.
+     * Debe coincidir con AliadoData.id en aliados.ts.
+     */
+    voucherAliadoId?: string;
 }
 
 export const puntos: PuntoData[] = [
@@ -53,7 +58,8 @@ export const puntos: PuntoData[] = [
         },
         "insigniaURL": "/img/insignia-palacio-municipal.png",
         "mapa": { "x": 200, "y": 220, "icono": "🏛️", "tipo": "palacio" },
-        "coordenadas": { "lat": 19.8029, "lng": -100.1308 }
+        "coordenadas": { "lat": 19.8029, "lng": -100.1308 },
+        "voucherAliadoId": "cafeteria-el-minero"
     },
     {
         "id": "teatro-juarez",
@@ -73,7 +79,8 @@ export const puntos: PuntoData[] = [
         },
         "insigniaURL": "/img/insignia-teatro-juarez.png",
         "mapa": { "x": 135, "y": 155, "icono": "🎭", "tipo": "teatro" },
-        "coordenadas": { "lat": 19.8034, "lng": -100.1315 }
+        "coordenadas": { "lat": 19.8034, "lng": -100.1315 },
+        "voucherAliadoId": "taller-plata-aurea"
     },
     {
         "id": "tiro-norte",
@@ -93,6 +100,7 @@ export const puntos: PuntoData[] = [
         },
         "insigniaURL": "/img/insignia-tiro-norte.png",
         "mapa": { "x": 295, "y": 75, "icono": "⛏️", "tipo": "tiro" },
-        "coordenadas": { "lat": 19.8055, "lng": -100.1290 }
+        "coordenadas": { "lat": 19.8055, "lng": -100.1290 },
+        "voucherAliadoId": "tranvia-el-oro"
     }
 ];
