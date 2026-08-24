@@ -1,6 +1,8 @@
 <script lang="ts">
     import { userStore } from "../stores/user";
     import type { PuntoData } from "../data/puntos";
+    import { aliados } from "../data/aliados";
+    import ModalSello from "./ModalSello.svelte";
 
     export let puntos: PuntoData[];
 
@@ -43,13 +45,6 @@
         return texto.length > max ? texto.slice(0, max - 1) + "…" : texto;
     }
 </script>
-
-<!-- Overlay para cerrar tooltip al tocar fuera -->
-{#if puntoSeleccionado}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="overlay" on:click={cerrarTooltip}></div>
-{/if}
 
 <section class="ruta-mapa" aria-label="Mapa de ruta de exploración">
 
@@ -306,70 +301,178 @@
     </div>
 </section>
 
-<!-- ─ Modal / Panel de punto seleccionado (fuera del mapa para evitar overflow) ─── -->
+<!-- ─ Modal / Panel de punto seleccionado ─── -->
 {#if puntoSeleccionado}
     {@const visitado = idsVisitados.has(puntoSeleccionado.id)}
-    <!-- Overlay para cerrar modal -->
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div
-        class="overlay"
-        on:click={cerrarTooltip}
-        tabindex="-1"
-        role="button"
-        aria-label="Cerrar modal"
-    ></div>
+    {@const selloActual = sellos.find(
+        (s) => s.puntoId === puntoSeleccionado?.id,
+    )}
+    {@const aliadoDelModal = puntoSeleccionado?.voucherAliadoId
+        ? (aliados.find(
+              (a) => a.id === puntoSeleccionado?.voucherAliadoId,
+          ) ?? null)
+        : null}
 
-    <div
-        class="tooltip"
-        class:tooltip-visitado={visitado}
-        class:tooltip-bloqueado={!visitado}
-        role="dialog"
-        aria-label="Información de {puntoSeleccionado.nombre}"
-    >
-        <button class="tooltip-cerrar" on:click={cerrarTooltip} aria-label="Cerrar">✕</button>
+    {#if visitado}
+        <!-- Sello obtenido: abre ModalSello con confetti y voucher -->
+        <ModalSello
+            visible={true}
+            punto={puntoSeleccionado}
+            fechaObtenida={selloActual?.fecha ?? null}
+            totalSellos={obtenidos}
+            totalPuntos={total}
+            aliado={aliadoDelModal}
+            on:cerrar={cerrarTooltip}
+        />
+    {:else}
+        <!-- Sello NO visitado: modal con indicaciones y botón Cómo llegar -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div
+            class="modal-mapa-overlay"
+            on:click|self={cerrarTooltip}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Información de {puntoSeleccionado.nombre}"
+        >
+            <div class="modal-mapa-panel">
+                <button
+                    class="modal-mapa-cerrar"
+                    on:click={cerrarTooltip}
+                    aria-label="Cerrar">✕</button
+                >
 
-        <div class="tooltip-icono-vector" aria-hidden="true">
-            {#if puntoSeleccionado.id === 'palacio-municipal'}
-                <svg viewBox="0 0 24 24" class="tooltip-svg"><path d="M2 9L12 3L22 9H2Z" fill="currentColor"/><circle cx="12" cy="6.6" r="1.2" fill="#1E1008" stroke="currentColor" stroke-width="0.6"/><path d="M4 10V17M9 10V17M15 10V17M20 10V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 18H22M1 20.5H23" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            {:else if puntoSeleccionado.id === 'teatro-juarez'}
-                <svg viewBox="0 0 24 24" class="tooltip-svg"><path d="M3 13C3 8 7 4 12 4C17 4 21 8 21 13C21 17.5 18 20.5 12 20.5C6 20.5 3 17.5 3 13Z" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="8.5" cy="11.5" rx="1.8" ry="1.2" fill="currentColor"/><ellipse cx="15.5" cy="11.5" rx="1.8" ry="1.2" fill="currentColor"/><path d="M8 15.5C9.5 17.5 14.5 17.5 16 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-            {:else if puntoSeleccionado.id === 'tiro-norte'}
-                <svg viewBox="0 0 24 24" class="tooltip-svg"><circle cx="12" cy="4" r="2.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 21L9.5 6H14.5L18 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 13.5H16M6.8 17.5H17.2" stroke="currentColor" stroke-width="1.3"/><path d="M12 4L19 21" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.5 1"/></svg>
-            {/if}
+                <div class="modal-mapa-icono" aria-hidden="true">
+                    {#if puntoSeleccionado.id === "palacio-municipal"}
+                        <svg viewBox="0 0 24 24" class="modal-mapa-svg"
+                            ><path
+                                d="M2 9L12 3L22 9H2Z"
+                                fill="currentColor"
+                            /><circle
+                                cx="12"
+                                cy="6.6"
+                                r="1.2"
+                                fill="#1E1008"
+                                stroke="currentColor"
+                                stroke-width="0.6"
+                            /><path
+                                d="M4 10V17M9 10V17M15 10V17M20 10V17"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"
+                            /><path
+                                d="M2 18H22M1 20.5H23"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                            /></svg
+                        >
+                    {:else if puntoSeleccionado.id === "teatro-juarez"}
+                        <svg viewBox="0 0 24 24" class="modal-mapa-svg"
+                            ><path
+                                d="M3 13C3 8 7 4 12 4C17 4 21 8 21 13C21 17.5 18 20.5 12 20.5C6 20.5 3 17.5 3 13Z"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                            /><ellipse
+                                cx="8.5"
+                                cy="11.5"
+                                rx="1.8"
+                                ry="1.2"
+                                fill="currentColor"
+                            /><ellipse
+                                cx="15.5"
+                                cy="11.5"
+                                rx="1.8"
+                                ry="1.2"
+                                fill="currentColor"
+                            /><path
+                                d="M8 15.5C9.5 17.5 14.5 17.5 16 15.5"
+                                stroke="currentColor"
+                                stroke-width="1.4"
+                                stroke-linecap="round"
+                                fill="none"
+                            /></svg
+                        >
+                    {:else if puntoSeleccionado.id === "tiro-norte"}
+                        <svg viewBox="0 0 24 24" class="modal-mapa-svg"
+                            ><circle
+                                cx="12"
+                                cy="4"
+                                r="2.4"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.4"
+                            /><path
+                                d="M6 21L9.5 6H14.5L18 21"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"
+                            /><path
+                                d="M8 13.5H16M6.8 17.5H17.2"
+                                stroke="currentColor"
+                                stroke-width="1.3"
+                            /><path
+                                d="M12 4L19 21"
+                                stroke="currentColor"
+                                stroke-width="1.2"
+                                stroke-dasharray="1.5 1"
+                            /></svg
+                        >
+                    {/if}
+                </div>
+
+                <div class="modal-mapa-info">
+                    <h3 class="modal-mapa-nombre">
+                        {puntoSeleccionado.nombre}
+                    </h3>
+                    <p class="modal-mapa-desc">
+                        {puntoSeleccionado.descripcionCorta}
+                    </p>
+                    <p class="modal-mapa-hint">
+                        📍 Dirígete a este lugar para escanear el QR y
+                        desbloquear la historia.
+                    </p>
+                </div>
+
+                <div class="modal-mapa-acciones">
+                    <button
+                        class="btn-modal-mapas"
+                        on:click={() =>
+                            abrirMapas(
+                                puntoSeleccionado.coordenadas.lat,
+                                puntoSeleccionado.coordenadas.lng,
+                                puntoSeleccionado.nombre,
+                            )}
+                    >
+                        <svg
+                            class="btn-mapas-svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <polygon
+                                points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"
+                            />
+                            <line x1="8" y1="2" x2="8" y2="18" />
+                            <line x1="16" y1="6" x2="16" y2="22" />
+                        </svg>
+                        <span>Cómo llegar</span>
+                    </button>
+                    <button
+                        class="btn-modal-cerrar"
+                        on:click={cerrarTooltip}
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            </div>
         </div>
-        <h3 class="tooltip-nombre">{puntoSeleccionado.nombre}</h3>
-        <p class="tooltip-desc">{puntoSeleccionado.descripcionCorta}</p>
-
-        {#if visitado}
-            <button
-                class="btn-tooltip btn-dorado"
-                on:click={() => irAlPunto(puntoSeleccionado.id)}
-            >
-                <svg class="btn-tooltip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-                </svg>
-                <span>Visitar nuevamente</span>
-            </button>
-        {:else}
-            <p class="tooltip-hint">📍 Dirígete a este lugar para escanear el QR y desbloquear la historia.</p>
-            <button
-                class="btn-tooltip btn-mapas"
-                on:click={() => abrirMapas(
-                    puntoSeleccionado.coordenadas.lat,
-                    puntoSeleccionado.coordenadas.lng,
-                    puntoSeleccionado.nombre
-                )}
-            >
-                <svg class="btn-tooltip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                    <line x1="8" y1="2" x2="8" y2="18"/>
-                    <line x1="16" y1="6" x2="16" y2="22"/>
-                </svg>
-                <span>Cómo llegar</span>
-            </button>
-        {/if}
-    </div>
+    {/if}
 {/if}
 
 <style>
@@ -519,152 +622,207 @@
         to   { transform: scale(1); opacity: 1; }
     }
 
-    /* ─── Overlay para cerrar modal ────────────────────────────────── */
-    .overlay {
+    /* ─── Modal para Punto No Visitado (Flexbox) ─────────────────────── */
+    .modal-mapa-overlay {
         position: fixed;
         inset: 0;
-        z-index: 100;
-        background: rgba(0, 0, 0, 0.72);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
+        z-index: 1000;
+        background: rgba(10, 5, 2, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        box-sizing: border-box;
+        overflow-y: auto;
     }
 
-    /* ─── Modal / Panel de punto (Estilo StampCollection) ──────────── */
-    .tooltip {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90%;
-        max-width: 360px;
-        max-height: 85vh;
-        overflow-y: auto;
-        padding: 22px 20px 24px;
-        border-radius: 18px;
-        z-index: 101;
+    .modal-mapa-panel {
+        position: relative;
+        z-index: 2;
+        background: linear-gradient(160deg, #1e1008 0%, #2a1a0a 100%);
+        border: 1px solid rgba(212, 160, 23, 0.4);
+        border-radius: 20px;
+        padding: 22px 18px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        max-width: min(92vw, 360px);
+        width: 100%;
+        max-height: min(90dvh, 480px);
         box-shadow:
-            0 16px 40px rgba(0, 0, 0, 0.85),
-            0 0 30px rgba(212, 160, 23, 0.15);
-        animation: slide-up-modal 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            0 0 0 1px rgba(212, 160, 23, 0.08),
+            0 24px 60px rgba(0, 0, 0, 0.75),
+            0 0 50px rgba(212, 160, 23, 0.1);
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        animation: entrada-modal-mapa 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    @keyframes slide-up-modal {
+    .modal-mapa-panel::-webkit-scrollbar {
+        display: none;
+    }
+    @keyframes entrada-modal-mapa {
         from {
             opacity: 0;
-            transform: translate(-50%, calc(-50% + 20px)) scale(0.92);
+            transform: scale(0.94) translateY(12px);
         }
         to {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: scale(1) translateY(0);
         }
     }
 
-    .tooltip-visitado {
-        background: linear-gradient(160deg, #221208 0%, #2E1B0B 100%);
-        border: 1px solid rgba(212, 160, 23, 0.5);
-    }
-    .tooltip-bloqueado {
-        background: linear-gradient(160deg, #1C0E07 0%, #261709 100%);
-        border: 1px solid rgba(212, 160, 23, 0.35);
-    }
-
-    .tooltip-cerrar {
+    .modal-mapa-cerrar {
         position: absolute;
-        top: 12px;
-        right: 14px;
+        top: 10px;
+        right: 12px;
         background: transparent;
         border: none;
-        color: var(--text-muted, #A08060);
-        font-size: 1rem;
+        color: var(--text-muted, #a08060);
+        font-size: 0.95rem;
         cursor: pointer;
-        padding: 6px;
-        line-height: 1;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
         transition: all 0.15s;
+        z-index: 3;
     }
-    .tooltip-cerrar:hover {
-        color: var(--text-primary, #F5E6C8);
-        transform: scale(1.15);
+    .modal-mapa-cerrar:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary, #f5e6c8);
     }
 
-    .tooltip-icono-vector {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 0 auto 8px;
-        width: 38px;
-        height: 38px;
+    .modal-mapa-icono {
+        width: 46px;
+        height: 46px;
         border-radius: 50%;
         background: rgba(212, 160, 23, 0.12);
         border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.35));
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-bottom: 2px;
+        box-shadow: 0 0 16px rgba(212, 160, 23, 0.2);
     }
-    .tooltip-svg {
-        width: 22px;
-        height: 22px;
-    }
-    .marcador-icono-svg {
-        transition: transform 0.2s ease, opacity 0.2s ease;
-    }
-    .tooltip-nombre {
-        font-family: 'Cinzel', serif;
-        font-size: 0.95rem;
-        font-weight: 700;
-        margin: 0 0 6px;
-        color: var(--text-primary, #F5E6C8);
-        text-align: center;
-    }
-    .tooltip-desc {
-        font-size: 0.78rem;
-        color: var(--text-muted, #A08060);
-        line-height: 1.5;
-        margin: 0 0 12px;
-        text-align: center;
-    }
-    .tooltip-hint {
-        font-size: 0.78rem;
-        color: var(--text-muted, #A08060);
-        margin: 0 0 10px;
-        text-align: center;
-        line-height: 1.5;
+    .modal-mapa-svg {
+        width: 24px;
+        height: 24px;
     }
 
-    /* ─── Botones del tooltip ────────────────────────────────────────── */
-    .btn-tooltip {
+    .modal-mapa-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        width: 100%;
+    }
+
+    .modal-mapa-nombre {
+        font-family: "Cinzel", serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary, #f5e6c8);
+        background: linear-gradient(
+            135deg,
+            var(--gold-bright, #f2c94c),
+            var(--gold-mid, #d4a017)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.25;
+    }
+
+    .modal-mapa-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted, #a08060);
+        line-height: 1.45;
+        margin: 0;
+    }
+
+    .modal-mapa-hint {
+        font-size: 0.74rem;
+        color: var(--gold-mid, #d4a017);
+        margin: 2px 0 0;
+        line-height: 1.4;
+        background: rgba(212, 160, 23, 0.08);
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px dashed rgba(212, 160, 23, 0.25);
+    }
+
+    .modal-mapa-acciones {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        width: 100%;
+        flex-shrink: 0;
+        margin-top: 6px;
+    }
+
+    .btn-modal-mapas {
+        flex: 1.2;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: 11px 16px;
+        gap: 6px;
+        padding: 10px 14px;
         border-radius: 999px;
-        font-family: 'Inter', sans-serif;
+        border: 1px solid rgba(212, 160, 23, 0.4);
+        background: rgba(212, 160, 23, 0.14);
+        color: var(--gold-bright, #f2c94c);
+        font-family: "Inter", sans-serif;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.82rem;
         cursor: pointer;
-        border: none;
         transition: all 0.2s;
+        white-space: nowrap;
     }
-    .btn-tooltip-svg {
+    .btn-modal-mapas:hover {
+        background: rgba(212, 160, 23, 0.25);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(212, 160, 23, 0.25);
+    }
+    .btn-mapas-svg {
         width: 15px;
         height: 15px;
-        flex-shrink: 0;
     }
-    .btn-dorado {
-        background: linear-gradient(135deg, var(--gold-mid, #D4A017), var(--gold-bright, #F2C94C));
-        color: #12090A;
-        box-shadow: 0 4px 14px rgba(212, 160, 23, 0.35);
+
+    .btn-modal-cerrar {
+        flex: 0.8;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 160, 23, 0.25);
+        background: transparent;
+        color: var(--text-muted, #a08060);
+        font-family: "Inter", sans-serif;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
     }
-    .btn-dorado:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(212, 160, 23, 0.5);
+    .btn-modal-cerrar:hover {
+        color: var(--text-primary, #f5e6c8);
+        border-color: rgba(212, 160, 23, 0.5);
+        background: rgba(212, 160, 23, 0.06);
     }
-    .btn-mapas {
-        background: rgba(212, 160, 23, 0.12);
-        color: var(--gold-bright, #F2C94C);
-        border: 1px solid rgba(212, 160, 23, 0.35) !important;
-        border: none;
-    }
-    .btn-mapas:hover {
-        background: rgba(212, 160, 23, 0.2);
-        transform: translateY(-1px);
+
+    .marcador-icono-svg {
+        transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
     }
 </style>
