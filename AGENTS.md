@@ -1,49 +1,131 @@
-# Pasaporte El Oro – Guía para Agentes de IA y Desarrolladores
+# Pasaporte El Oro – Guía Integral para Agentes de IA y Desarrolladores
 
-## 🎯 Propósito del proyecto
-Pasaporte turístico digital inmersivo para El Oro, Pueblo Mágico Minero del Estado de México.  
-PWA offline‑first que, mediante escaneo de códigos QR en puntos turísticos, reproduce una narración en audio (bloqueando el avance rápido), desbloquea una trivia y, al acertar, otorga un sello digital coleccionable.  
-Recoge origen (país, estado, municipio) y rango de edad del visitante, con fines estadísticos, y ofrece un panel de administración para gestionar los puntos.
+## 🎯 Propósito del Proyecto
+**Pasaporte El Oro** es una Progressive Web App (PWA) offline-first y gamificada diseñada para el Pueblo Mágico Minero de El Oro, Estado de México.
 
-## 🧱 Stack tecnológico definitivo
-| Capa | Tecnología | Justificación |
-|------|------------|---------------|
-| Framework principal | **Astro** (modo estático) | HTML mínimo, islas interactivas, excelente rendimiento. |
-| Componentes interactivos | **Svelte** (compilado a JS vanilla) | Reactividad sencilla, peso mínimo (~2 KB por isla). |
-| Backend / datos | **Firebase** (Auth, Firestore) | Autenticación anónima sin fricción, base de datos en tiempo real con persistencia offline. |
-| Almacenamiento de archivos | **URLs públicas** (carpeta `public/` o CDN externo) | Se evita Firebase Storage para permanecer en el plan Spark gratuito. |
-| PWA / Service Worker | **Workbox** (Service Worker manual en `public/sw.js`) | Precaching estático, estrategia cache‑first. Compatible con cualquier versión de Astro. |
-| Multi‑idioma (preparado) | `astro‑i18next` (configurado, español activo) | Inglés y mazahua listos para activar. |
-| Estilos | CSS plano (sin librerías) | Máxima velocidad, sin dependencias. |
+Transforma la visita turística en una aventura inmersiva tipo videojuego RPG:
+1. **Ruta & Mapa**: El usuario explora el mapa interactivo vectorial de puntos turísticos y comercios aliados.
+2. **Escaneo QR & Audio**: Al llegar a un punto y escanear el QR físico, escucha una narración histórica con avance bloqueado.
+3. **Trivia Desbloqueable**: Al finalizar el audio, responde una trivia con sistema de vidas y retroalimentación inmediata.
+4. **Sellos Digitales & Vouchers**: Al acertar, desbloquea una insignia para su pasaporte y **gana un voucher de cortesía/descuento** con un aliado comercial local (fomentando la derrama económica y monetización).
+5. **Cero Fricción Offline**: Funciona al 100% sin conexión a internet tras la primera carga, con persistencia local y sincronización en tiempo real.
 
-## 📋 Requisitos previos para el desarrollo
-- Node.js 18+ y npm 9+
-- Cuenta de Firebase (plan Spark gratuito)
-- Firebase CLI (`npm install -g firebase-tools`)
-- Git (opcional)
+---
 
-## 🔐 Configuración de Firebase
+## 🧱 Stack Tecnológico y Decisiones de Arquitectura
 
-### 1. Crear proyecto en Firebase Console
-- Activar **Authentication** con proveedores:
-  - Anónimo
-  - Correo electrónico/contraseña
-- Crear base de datos **Firestore** en modo producción (reglas actualizadas después).
-- **No activar Storage** (se usan URLs públicas).
+| Capa | Tecnología | Justificación y Reglas |
+|------|------------|------------------------|
+| **Framework Principal** | **Astro (Static Mode)** | Arquitectura de islas, HTML estático ultra-rápido, cero overhead de JS en el cascarón principal. |
+| **Componentes Reactivos** | **Svelte 4/5** | Compilado a JavaScript vanilla liviano (~2 KB por isla), reactividad nativa mediante stores. |
+| **Diseño & Layout** | **Vanilla CSS + Flexbox Fluido** | Cero dependencias externas (sin Tailwind). Diseñado para **100% de altura de pantalla (`100dvh` / `overflow: hidden`)** sin scroll vertical forzado en móviles. |
+| **Base de Datos & Auth** | **Firebase (Spark Free)** | Autenticación anónima transparente, Firestore en tiempo real con persistencia IndexedDB habilitada. |
+| **Caché y Zero-Latency** | **LocalStorage + Svelte Store** | Hidratación síncrona en 0 ms (`pasaporte_user_cache_v1`) y revalidación en segundo plano (*Stale-While-Revalidate* con `onSnapshot`). |
+| **PWA & Offline** | **Workbox / Service Worker (`public/sw.js`)** | Pre-cacheo de HTML, audios, imágenes y datos geográficos. Soporte de *HTTP 206 Range Requests* para audios en iOS Safari offline. |
+| **Multimedia & CDN** | **`public/` (Audio, SVG, WebP)** | Cero costos de Firebase Storage; todos los activos residen en la carpeta pública o CDN estático. |
 
-### 2. Variables de entorno
-Crear archivo `.env` (o `.env.production`) con las credenciales de Firebase:
+---
+
+## 📁 Estructura del Repositorio
+
 ```
-PUBLIC_FIREBASE_API_KEY=...
-PUBLIC_FIREBASE_AUTH_DOMAIN=...
-PUBLIC_FIREBASE_PROJECT_ID=...
-PUBLIC_FIREBASE_STORAGE_BUCKET=...
-PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-PUBLIC_FIREBASE_APP_ID=...
+pasaporte-eloro/
+├── public/
+│   ├── audio/                 # Audios de las narraciones históricas (MP3)
+│   ├── img/                   # Miniaturas de puntos e insignias de sellos
+│   ├── data/                  # JSON de países, estados y municipios de México
+│   ├── sw.js                  # Service Worker manual resiliente con Range Requests
+│   ├── registerSW.js          # Script de registro del Service Worker
+│   └── manifest.webmanifest   # Manifiesto PWA (iconos, colores, display standalone)
+├── src/
+│   ├── components/
+│   │   ├── PasaporteApp.svelte       # Orquestador principal (RutaMapa ⇄ Pasaporte con Tab Bar RPG)
+│   │   ├── StampCollection.svelte   # Carrusel horizontal de sellos, XP y medallón de rango
+│   │   ├── StampBadge.svelte        # Insignia individual responsiva con anillo orbital
+│   │   ├── ModalSello.svelte        # Modal de celebración e inspección de sello con Voucher
+│   │   ├── VoucherCard.svelte       # Ticket de recompensa comercial (variantes modal y celebración)
+│   │   ├── RutaMapa.svelte          # Mapa SVG interactivo con modales contextuales
+│   │   ├── AudioPlayer.svelte       # Reproductor con avance bloqueado, onda sonora y botón de cierre
+│   │   ├── Trivia.svelte            # Sistema de preguntas, vidas e insignias interactivas
+│   │   ├── DataForm.svelte          # Modal overlay para registro obligatorio del 1er sello
+│   │   ├── SelectoresUbicacion.svelte # Selectores encadenados país/estado/municipio
+│   │   ├── PerfilPage.svelte        # Consulta y edición del perfil del turista
+│   │   ├── MiningLoader.svelte      # Animación de carga temática (pico minero dorado)
+│   │   └── admin/                   # Componentes del panel administrativo
+│   │       ├── LoginForm.svelte
+│   │       ├── DashboardStats.svelte
+│   │       └── PuntoForm.svelte
+│   ├── data/
+│   │   ├── puntos.ts          # Datos de los puntos patrimoniales y vínculos con aliados
+│   │   └── aliados.ts         # Datos de comercios aliados, categorías y beneficios
+│   ├── layouts/
+│   │   ├── BaseLayout.astro   # Layout base con tokens CSS, astro-island contents y listeners
+│   │   └── AdminLayout.astro  # Layout para el panel de administración
+│   ├── lib/
+│   │   ├── firebase.ts        # Inicialización del SDK de Firebase
+│   │   ├── auth.ts            # Autenticación anónima
+│   │   ├── db.ts              # Operaciones Firestore (escucharUsuario, guardarSello, visitas)
+│   │   ├── firestore-persistence.ts # Activación de persistencia IndexedDB
+│   │   ├── adminAuth.ts       # Lista de administradores autorizados
+│   │   └── stats.ts           # Agregación de métricas de visitas
+│   ├── pages/
+│   │   ├── index.astro        # Punto de entrada principal (<PasaporteApp />)
+│   │   ├── punto/[id].astro   # Página del punto turístico con pre-carga de assets
+│   │   ├── aliado/[id].astro  # Ficha de aliado comercial y canje de voucher
+│   │   ├── perfil.astro       # Página de perfil del usuario
+│   │   └── admin/             # Rutas administrativas (/admin, /admin/login, /admin/puntos)
+│   └── stores/
+│       └── user.ts            # Store reactivo con sincronización instantánea en LocalStorage
+├── astro.config.mjs
+├── firebase.json
+└── firestore.rules
 ```
-Nunca se incluyen en el repositorio (agregar al `.gitignore`).
 
-### 3. Reglas de Firestore
+---
+
+## 🎮 Arquitectura de Componentes y Flujos de Juego
+
+### 1. Orquestador Principal (`PasaporteApp.svelte`)
+- Mantiene vivas en el DOM las dos vistas esenciales: **Explorar (RutaMapa)** y **Pasaporte (StampCollection)**.
+- Alterna entre ellas usando `opacity`, `transform` y `pointer-events`, preservando el estado de scroll horizontal y marcadores sin re-montar componentes.
+- Tab Bar inferior fija de `56px` con micro-animaciones e iconos vectoriales iluminados con oro metálico.
+
+### 2. Carrusel de Sellos (`StampCollection.svelte` & `StampBadge.svelte`)
+- Layout basado en **Flexbox elástico**: Header compacto (`46px`), barra de experiencia XP (`8px`), y carrusel central con scroll snap horizontal.
+- Insignia (`StampBadge.svelte`) con `flex: 1; min-height: 0;` y `max-height: 100%`, asegurando el máximo tamaño visual posible sin desbordar el alto de la pantalla en móviles pequeños.
+
+### 3. Monetización y Recompensas (`VoucherCard.svelte`)
+- Cada punto turístico cuenta con un `voucherAliadoId` en `src/data/puntos.ts`.
+- Al ganar un sello (o al inspeccionarlo en el pasaporte), se entrega un cupón físico estilizado con línea de puntos perforada, estado en vivo pulsante (`status-dot`), vigencia y botón directo a `/aliado/[id]`.
+
+### 4. Mapa Interactivo Contextual (`RutaMapa.svelte`)
+- **Punto ya obtenido**: Al tocarlo en el mapa, abre directamente `ModalSello.svelte` con su confetti, estado y voucher.
+- **Punto bloqueado**: Abre un modal Flexbox con la descripción y el botón de acción **`🗺️ Cómo llegar`**, el cual abre la aplicación de mapas nativa offline (`geo:` en Android, `maps:` en iOS).
+
+### 5. Narración & Trivia (`PuntoPage.svelte`, `AudioPlayer.svelte`, `Trivia.svelte`)
+- Pre-carga de imágenes y audios mediante directivas `<link rel="preload">` en `punto/[id].astro`.
+- Determinación síncrona de fase: Si el usuario ya cuenta con el sello, la vista inicia inmediatamente en `selloGanado`.
+- `AudioPlayer` previene el avance manual y expone un botón `✕` de cierre si el usuario ya cuenta con el sello o ya escuchó la narración completa.
+- Guardado optimista (*fire-and-forget*): La UI otorga el sello y activa la celebración al instante sin congelar la pantalla esperando respuestas de red.
+
+---
+
+## ⚡ Estrategia de Rendimiento y Carga Instantánea (0 ms)
+
+1. **Hidratación Síncrona (`src/stores/user.ts`)**:
+   - `userStore` se inicializa de forma síncrona leyendo `localStorage` antes del primer render en el cliente.
+   - Si el usuario ya tenía sellos o perfil, aparecen en 0 ms sin destellos.
+2. **Escucha en Tiempo Real con `onSnapshot` (`src/lib/db.ts`)**:
+   - Reemplaza las consultas secuenciales por un listener que lee directamente de IndexedDB en <10 ms y sincroniza con Firestore en segundo plano.
+3. **Animación Temática de Carga (`MiningLoader.svelte`)**:
+   - En la primera visita de un nuevo usuario, se despliega un loader ligero en CSS puro con un pico minero dorado animado (`⛏️ ✨`).
+4. **Aceleración por Hardware en CSS**:
+   - `transform: translateZ(0);` y `will-change: opacity, transform;` en transiciones de vistas.
+
+---
+
+## 🔐 Modelo de Seguridad y Reglas de Firestore
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -69,217 +151,36 @@ service cloud.firestore {
   }
 }
 ```
-Sustituir `UID_ADMIN` por el UID real del administrador creado en Authentication.
 
-### 4. Estructura de datos en Firestore
-```
-puntos (colección)
-  └─ {puntoId}
-       ├─ orden: number
-       ├─ nombre: { es: string }
-       ├─ descripcionCorta: { es: string }
-       ├─ imagenMiniatura: string (URL)
-       ├─ audioURL: string (URL)
-       ├─ duracion: number (segundos)
-       ├─ trivia: {
-       │    pregunta: { es: string },
-       │    opciones: [ { texto: { es: string }, correcta: boolean } ]
-       │  }
-       ├─ insigniaURL: string (URL)
-       └─ activo: boolean
+---
 
-aliados (colección)
-  └─ {aliadoId}
-       ├─ id: string (slug único, ej. "tranvia-el-oro")
-       ├─ nombre: string
-       ├─ categoria: string ("Tour" | "Restaurante" | "Taller artesanal" | "Hotel")
-       ├─ coleccion: string ("sabores" | "artesanias" | "descanso" | "aventura")
-       ├─ descripcionCorta: string
-       ├─ imagenLogo: string (URL)
-       ├─ insigniaURL: string (URL)
-       ├─ beneficio: { tipo, detalle, vigencia } (opcional)
-       ├─ activo: boolean
-       └─ orden: number
+## 🛠️ Comandos de Desarrollo y Verificación
 
-usuarios (colección)
-  └─ {uid}
-       ├─ perfil: { pais, estado, municipio, rangoEdad }
-       ├─ sellos: [ { puntoId, fecha, origen } ] (puntos patrimoniales)
-       ├─ sellosAliados: { [aliadoId]: { fecha, origen } } (aliados comerciales)
-       └─ visitas (subcolección)
-            └─ {puntoId}
-                 ├─ fecha: Timestamp
-                 ├─ selloObtenido: boolean
-                 ├─ intentosTrivia: number
-                 ├─ ultimoIntento: Timestamp
-                 └─ origen: string ('qr' | 'sello' | 'desconocido')
-
-visitas_aliados (colección)
-  └─ {visitaId}
-       ├─ uid: string
-       ├─ aliadoId: string
-       ├─ fecha: Timestamp
-       └─ origen: 'qr' | 'sello' | 'desconocido'
-```
-Los puntos y aliados también se cargan desde archivos estáticos (`src/data/puntos.ts`, `src/data/aliados.ts`) para máxima velocidad offline.
-
-### 5. Parámetros de Origen de Visita
-- `?origen=qr`: Visitas iniciadas desde el escaneo de un código QR físico en un punto turístico o local aliado.
-- `?origen=sello`: Visitas iniciadas desde enlaces internos del pasaporte.
-- `desconocido`: Valor por defecto si no se especifica el parámetro.
-
-
-## 📁 Estructura del proyecto
-```
-/
-├── public/
-│   ├── audio/               (archivos de audio)
-│   ├── img/                 (imágenes de puntos e insignias)
-│   ├── data/                (JSON de ubicaciones: países, estados, municipios)
-│   ├── sw.js                (Service Worker manual)
-│   ├── registerSW.js        (script de registro del SW)
-│   ├── manifest.webmanifest (configuración de la PWA)
-│   └── favicon.svg / iconos
-├── src/
-│   ├── components/          (componentes Svelte)
-│   │   ├── AudioPlayer.svelte
-│   │   ├── Trivia.svelte
-│   │   ├── DataForm.svelte
-│   │   ├── SelectoresUbicacion.svelte
-│   │   ├── StampBadge.svelte
-│   │   ├── StampCollection.svelte
-│   │   ├── PerfilPage.svelte
-│   │   └── admin/           (componentes del panel)
-│   ├── data/
-│   │   └── puntos.ts        (datos estáticos de los 8 puntos)
-│   ├── layouts/
-│   │   ├── BaseLayout.astro
-│   │   └── AdminLayout.astro
-│   ├── lib/
-│   │   ├── firebase.ts
-│   │   ├── auth.ts
-│   │   ├── db.ts
-│   │   ├── firestore-persistence.ts
-│   │   ├── adminAuth.ts
-│   │   └── stats.ts
-│   ├── pages/
-│   │   ├── index.astro
-│   │   ├── punto/[id].astro
-│   │   ├── perfil.astro
-│   │   └── admin/
-│   │       ├── login.astro
-│   │       ├── index.astro
-│   │       └── puntos.astro
-│   └── stores/
-│       └── user.ts          (store Svelte: uid, perfil, sellos)
-├── astro.config.mjs
-├── firebase.json
-├── package.json
-└── .env
-```
-
-## 🔄 Flujo del usuario (turista)
-1. Escanea QR físico → `/punto/{id}?origen=qr` (o accede desde el pasaporte con `?origen=sello`).
-2. Inicio de sesión anónimo automático (sin interacción).
-3. **Si el usuario ya tiene el sello de ese punto:**
-   - Carga directamente en estado "Sello obtenido" sin obligar a escuchar el audio.
-   - Opciones disponibles: "🎒 Ver mi pasaporte", "🎯 Ver trivia" (modo repaso) y "🎧 Escuchar audio".
-   - En modo repaso, si ya acertó hoy se muestra la respuesta correcta bloqueada; si no, puede responder pero no genera sellos duplicados.
-4. **Si el usuario aún no tiene el sello:**
-   - Reproducción del audio con avance bloqueado.
-   - Al terminar, se habilita trivia (1 pregunta, 4 opciones, 4 intentos diarios).
-   - Al acertar:
-     - Si es el primer sello → modal con aviso de privacidad y datos obligatorios (país, estado, municipio, edad).
-     - Se guarda el sello en Firestore (offline si es necesario).
-5. El pasaporte en `/` muestra todas las insignias (grises si no obtenidas, color si obtenidas).
-
-## 🧩 Componentes Svelte importantes
-
-### `AudioPlayer.svelte`
-- Props: `audioURL`, `duracion`.
-- Bloquea el avance rápido (barra de progreso no interactiva, evento `seeking` cancelado).
-- Emite evento `ended` al finalizar.
-
-### `Trivia.svelte`
-- Props: `pregunta`, `opciones`, `puntoId`.
-- 4 intentos por día (guardados en `localStorage`).
-- Retroalimentación visual inmediata (sacudida en fallos, rebote en aciertos, insignias de letras interactivas).
-- Emite eventos `success` (con delay para apreciar la animación) o `failed`, y `cerrar`.
-
-### `SelectoresUbicacion.svelte`
-- País: lista fija de países frecuentes + "Otro" con campo de texto manual.
-- Si país = México → listas desplegables encadenadas de estados y municipios (archivos JSON precacheados para modo offline).
-- Otro país → campos de texto para estado/provincia y ciudad/municipio.
-- Emite evento `change` con `{ pais, estado, municipio }`.
-
-### `DataForm.svelte`
-- Modal tipo overlay (`fixed` con `backdrop-filter: blur(8px)`) compatible 100% con navegadores móviles, WebViews de escáneres QR y despliegues en Firebase Hosting.
-- Contiene `SelectoresUbicacion` y selector de rango de edad.
-- Checkbox de consentimiento y aviso de privacidad turística.
-- Emite evento `save` con los datos del perfil para desbloquear el primer sello.
-
-### `StampCollection.svelte`
-- Colección de sellos e insignias con barra de experiencia/progreso.
-- Al completar el 100% de los sellos (`obtenidos === total`), despliega el **Voucher Dorado de Recompensa**:
-  - Badge *Logro Desbloqueado: Explorador Maestro*.
-  - Emblema con aura animada y ticket estilo vintage minero.
-  - Canjeable por un **Café de Cortesía** en el **Restaurante «La Gran Sociedad»**.
-  - Estado de validez en vivo (`status-dot` pulsante) y código de validación digital (`PASAPORTE-ELORO-OK`).
-
-### `PerfilPage.svelte`
-- Vista y edición de los datos de perfil del usuario, con aviso de privacidad.
-
-## 🛡️ Panel de administración
-- **Ruta**: `/admin`
-- **Login**: `/admin/login` (Firebase Auth email/password).
-- **Verificación de administrador**: lista de UIDs en `src/lib/adminAuth.ts` (debe coincidir con las reglas de Firestore).
-- **Dashboard**: estadísticas básicas (visitas totales, por punto, origen, edad).
-- **Gestión de puntos**: `/admin/puntos` permite crear, editar y eliminar puntos.
-  - El formulario solicita URLs de audio, imagen miniatura e insignia (sin subida de archivos).
-  - Los archivos se alojan en `public/` o en un CDN externo.
-
-## 📴 PWA y funcionamiento offline
-- **Service Worker (`public/sw.js` v4)**:
-  - **Precaching resiliente**: Descarga y almacena todas las páginas principales, audios, imágenes y datos geográficos sin fallar en lote si un recurso aislado falla.
-  - **Soporte de Range Requests (HTTP 206)**: Permite que el reproductor de audio funcione de forma fluida y sin bloqueos en iOS Safari y navegadores móviles en modo 100% offline.
-  - **Estrategia para navegación HTML**: *Network-First* con fallback a caché usando `ignoreSearch: true`, permitiendo que el escaneo de códigos QR (`?origen=qr`) funcione sin conexión.
-  - **Estrategia para assets estáticos**: *Cache-First* con actualización transparente en segundo plano.
-- **Registro**: `public/registerSW.js` cargado en `BaseLayout.astro`.
-- **Firestore offline**: Habilitado con persistencia local en IndexedDB.
-- **Sin conexión**: Los sellos y datos de perfil se guardan localmente y se sincronizan al reconectar.
-
-## 🚀 Despliegue en Firebase Hosting
-1. `firebase login`
-2. `firebase init hosting` (directorio público: `dist`, SPA: No)
-3. `npm run build`
-4. `firebase deploy --only hosting`
-
-El archivo `firebase.json` incluye configuración limpia para servir los assets estáticos generados por Astro.
-
-## 🧪 Comandos útiles
 ```bash
-npm run dev            # desarrollo local (http://localhost:4321)
-npm run build          # construcción para producción
-npx serve dist         # servir la build localmente (prueba offline)
-node generar-datos-mexico.mjs  # generar JSON de estados y municipios
+# Iniciar servidor de desarrollo local
+npm run dev
+
+# Compilar producción estática
+npm run build
+
+# Validar funcionamiento PWA / offline localmente
+npx serve dist
+
+# Desplegar a Firebase Hosting
+firebase deploy --only hosting
 ```
 
-## ❗ Solución de problemas comunes
-| Error | Causa probable | Solución |
-|-------|---------------|----------|
-| `auth/configuration-not-found` | Proveedor anónimo no habilitado en Firebase Auth | Habilitar en consola Firebase |
-| `[GetStaticPathsRequired]` en ruta dinámica de admin | Astro requiere `getStaticPaths()` o `prerender = false` | Cambiar a ruta con query string y componente Svelte (`/admin/puntos?edit=id`) |
-| "No tienes permisos de administrador" al hacer login | Función `isAdmin()` en reglas de Firestore no reconoce el UID | Verificar que el UID esté en la lista de las reglas y en `adminAuth.ts` |
-| Estilos no se muestran en modales tras despliegue | Uso de `<dialog>` nativo en top layer pierde herencia de tokens en móviles | Usar contenedor overlay con `position: fixed` y clases CSS con fallbacks |
-| Service Worker no se registra (404 en `sw.js`) | Archivo SW no ubicado en raíz pública | Usar Service Worker manual (`public/sw.js`) y registro explícito |
-| Audio no se reproduce offline | Audio no incluido en precache | Añadir URL del audio en `PRECACHE_URLS` de `sw.js` |
+---
 
-## 🌟 Mejoras futuras (post‑MVP)
-- Activar multi‑idioma (inglés, mazahua).
-- Diploma descargable (canvas) y enlace público compartible.
-- Dashboard de estadísticas con gráficos interactivos.
-- Sincronización offline con `workbox-background-sync` para una cola explícita.
-- Generación automática de QR para cada punto.
-```
+## 💡 Guía para Nuevas Funcionalidades
 
-Este documento concentra todo el conocimiento técnico y funcional necesario para que cualquier desarrollador (humano o agente) pueda mantener y hacer evolucionar el proyecto.
+1. **Añadir nuevos Puntos Turísticos**:
+   - Registrar en `src/data/puntos.ts`.
+   - Asignar audio en `public/audio/[id].mp3`, miniatura en `public/img/[id].webp`, e insignia en `public/img/sello-[id].webp`.
+   - Vincular opcionalmente a un comercio aliado con `voucherAliadoId`.
+2. **Añadir nuevos Comercios Aliados**:
+   - Registrar en `src/data/aliados.ts`.
+   - Definir categoría (`"sabores"`, `"artesanias"`, `"descanso"`, `"aventura"`) y beneficio.
+3. **Mantener Reglas de Estilo**:
+   - Mantener el contenedor principal con `100%` de altura sin scroll vertical forzado en móvil.
+   - Utilizar la paleta oficial (Dorado `#F2C94C`, `#D4A017`, Fondo `#12090A`, `#1E1008`, Tipografías `Cinzel` e `Inter`).
