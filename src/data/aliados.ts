@@ -20,6 +20,11 @@ export interface AliadoData {
     categoria: string;        // ej. "Tour", "Restaurante", "Taller artesanal", "Hotel"
     coleccion: string;        // ej. "aventura", "sabores", "artesanias", "descanso"
     descripcionCorta: string;
+    direccion?: string;
+    coordenadas?: {
+        lat: number;
+        lng: number;
+    };
     imagenLogo: string;
     insigniaURL: string;
     beneficio?: BeneficioAliado;
@@ -34,6 +39,11 @@ export const aliados: AliadoData[] = [
         categoria: 'Tour',
         coleccion: 'aventura',
         descripcionCorta: 'Recorrido pintoresco por el centro histórico, callejones empedrados y miradores mineros guiado por cronistas locales.',
+        direccion: 'Jardín Madero, Centro Histórico (Frente a Palacio Municipal)',
+        coordenadas: {
+            lat: 19.8032,
+            lng: -100.1315
+        },
         imagenLogo: '/img/aliados/tranvia.svg',
         insigniaURL: '/img/insignias/tranvia.svg',
         beneficio: {
@@ -50,6 +60,11 @@ export const aliados: AliadoData[] = [
         categoria: 'Restaurante',
         coleccion: 'sabores',
         descripcionCorta: 'Café de altura de especialidad, pan tradicional horneado con leña y recetas gastronómicas inspiradas en las familias mineras inglesas.',
+        direccion: 'Calle Benito Juárez #12, Centro Histórico',
+        coordenadas: {
+            lat: 19.8028,
+            lng: -100.1308
+        },
         imagenLogo: '/img/aliados/cafeteria-el-minero.svg',
         insigniaURL: '/img/insignias/cafeteria-el-minero.svg',
         beneficio: {
@@ -66,6 +81,11 @@ export const aliados: AliadoData[] = [
         categoria: 'Taller artesanal',
         coleccion: 'artesanias',
         descripcionCorta: 'Joyería fina en plata ley .925 y piedras semipreciosas elaboradas a mano por maestros orfebres locales con técnicas centenarias.',
+        direccion: 'Portal Hidalgo #4, Centro Histórico',
+        coordenadas: {
+            lat: 19.8035,
+            lng: -100.1319
+        },
         imagenLogo: '/img/aliados/taller-plata-aurea.svg',
         insigniaURL: '/img/insignias/taller-plata-aurea.svg',
         beneficio: {
@@ -82,6 +102,11 @@ export const aliados: AliadoData[] = [
         categoria: 'Hotel',
         coleccion: 'descanso',
         descripcionCorta: 'Hospedaje colonial del siglo XIX restaurado con chimeneas de cantera, jardines interiores y vistas panorámicas a las montañas.',
+        direccion: 'Av. Constitución #28, Barrio San Miguel',
+        coordenadas: {
+            lat: 19.8019,
+            lng: -100.1325
+        },
         imagenLogo: '/img/aliados/hotel-casa-real.svg',
         insigniaURL: '/img/insignias/hotel-casa-real.svg',
         beneficio: {
@@ -93,3 +118,4 @@ export const aliados: AliadoData[] = [
         orden: 4
     }
 ];
+
