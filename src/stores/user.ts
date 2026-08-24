@@ -24,6 +24,7 @@ export interface UserState {
     sellos: Sello[];
     sellosAliados: Record<string, SelloAliado>;
     perfil: DatosPerfil | null;
+    monedas: number;
     cargando: boolean;
 }
 
@@ -36,6 +37,7 @@ function cargarCacheInicial(): UserState {
             sellos: [],
             sellosAliados: {},
             perfil: null,
+            monedas: 0,
             cargando: true,
         };
     }
@@ -44,16 +46,18 @@ function cargarCacheInicial(): UserState {
         const item = localStorage.getItem(STORAGE_KEY);
         if (item) {
             const data = JSON.parse(item);
+            const sellosList = Array.isArray(data.sellos)
+                ? data.sellos.map((s: any) => ({
+                      ...s,
+                      fecha: s.fecha ? new Date(s.fecha) : new Date(),
+                  }))
+                : [];
             return {
                 uid: data.uid || null,
-                sellos: Array.isArray(data.sellos)
-                    ? data.sellos.map((s: any) => ({
-                          ...s,
-                          fecha: s.fecha ? new Date(s.fecha) : new Date(),
-                      }))
-                    : [],
+                sellos: sellosList,
                 sellosAliados: data.sellosAliados || {},
                 perfil: data.perfil || null,
+                monedas: typeof data.monedas === 'number' ? data.monedas : sellosList.length * 40,
                 cargando: false,
             };
         }
@@ -66,6 +70,7 @@ function cargarCacheInicial(): UserState {
         sellos: [],
         sellosAliados: {},
         perfil: null,
+        monedas: 0,
         cargando: true,
     };
 }
@@ -83,10 +88,11 @@ if (typeof window !== 'undefined') {
                     sellos: state.sellos,
                     sellosAliados: state.sellosAliados,
                     perfil: state.perfil,
+                    monedas: state.monedas || 0,
                 })
             );
         } catch (e) {
             console.warn('[Store] Error al guardar cache local:', e);
         }
     });
-}
+}

@@ -9,22 +9,30 @@
     export let puntos: PuntoData[];
 
     $: sellos = $userStore.sellos;
+    $: monedas =
+        typeof $userStore.monedas === "number"
+            ? $userStore.monedas
+            : sellos.length * 40;
     $: total = puntos.length;
     $: obtenidos = sellos.length;
     $: porcentaje = total > 0 ? (obtenidos / total) * 100 : 0;
     $: rango =
-        obtenidos === 0
-            ? { id: "visitante", label: "Paseante Casual", nivel: "1 / 3" }
-            : obtenidos < total
+        monedas < 40
+            ? {
+                  id: "visitante",
+                  label: "Gambusino Novato",
+                  nivel: `🪙 ${monedas}`,
+              }
+            : monedas < 90
               ? {
                     id: "explorador",
-                    label: "Explorador en Progreso",
-                    nivel: `${obtenidos} / ${total}`,
+                    label: "Barretero de Veta",
+                    nivel: `🪙 ${monedas}`,
                 }
               : {
                     id: "ciudadano",
-                    label: "Ciudadano Aurense",
-                    nivel: "Completado",
+                    label: "Gran Ciudadano Aurense",
+                    nivel: `🪙 ${monedas}`,
                 };
 
     // Animar la barra XP al montar
@@ -55,8 +63,8 @@
         window.open(url, "_blank");
     }
 
-    // ─── Carrusel ─────────────────────────────────────────────────
-    let carruselEl: HTMLElement;
+    // ─── Paginación / Scroll Snap ─────────────────────────────────
+    let carruselEl: HTMLDivElement;
     let indiceActivo = 0;
 
     function onCarruselScroll() {
@@ -178,33 +186,23 @@
                             cx="24"
                             cy="24"
                             r="17"
-                            fill="#1E1008"
+                            fill="#1C0E07"
                             stroke="#D4A017"
                             stroke-width="1"
-                        />
-                        <path
-                            d="M12 30 C10 21 14 14 18 11 M36 30 C38 21 34 14 30 11"
-                            stroke="#F2C94C"
-                            stroke-width="1.4"
-                            fill="none"
-                            stroke-linecap="round"
-                        />
-                        <path
-                            d="M14 16 L34 32 M34 16 L14 32"
-                            stroke="#EAEAEA"
-                            stroke-width="2.2"
-                            stroke-linecap="round"
-                        />
-                        <path
-                            d="M11 13 L17 19 M37 13 L31 19"
-                            stroke="#F2C94C"
-                            stroke-width="2.8"
-                            stroke-linecap="round"
+                            stroke-dasharray="2 3"
                         />
                         <polygon
-                            points="24,19 28,24 24,29 20,24"
+                            points="24,8 26,17 35,17 28,23 30,32 24,27 18,32 20,23 13,17 22,17"
                             fill="#F2C94C"
                             stroke="#FFF2B2"
+                            stroke-width="0.8"
+                        />
+                        <circle
+                            cx="24"
+                            cy="22"
+                            r="3"
+                            fill="#EAEAEA"
+                            stroke="#8E8E8E"
                             stroke-width="0.8"
                         />
                     </svg>
@@ -277,8 +275,8 @@
     <!-- Barra de XP / progreso -->
     <div class="xp-section">
         <div class="xp-labels">
-            <span class="xp-texto">Progreso del Pasaporte</span>
-            <span class="xp-contador">{obtenidos} / {total}</span>
+            <span class="xp-texto">Progreso: {obtenidos}/{total} sellos</span>
+            <span class="xp-contador">🪙 {monedas} Monedas</span>
         </div>
         <div
             class="xp-track"

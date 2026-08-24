@@ -119,11 +119,13 @@
             bloqueada = true;
             guardarEstado();
             // Pausa para que el usuario aprecie el acierto antes del cambio de fase
+            const monedasGanadas = Math.max(10, intentosRestantes * 10);
             setTimeout(() => {
                 cerrarModal();
                 dispatch("success", {
                     vidasRestantes: intentosRestantes,
                     intentosUsados: 4 - intentosRestantes,
+                    monedasGanadas,
                 });
             }, 750);
         } else {
@@ -174,15 +176,15 @@
     aria-label="Trivia: {pregunta}"
 >
     <div class="trivia-panel">
-        <!-- Encabezado con vidas y botón cerrar -->
+        <!-- Encabezado con Botín Minero y botón cerrar -->
         <div class="trivia-header">
             <div class="trivia-header-info">
                 <h3 class="trivia-titulo">
-                    {modoRevisar ? "🎯 Trivia (Modo Repaso)" : "🎯 Trivia Minera"}
+                    {modoRevisar ? "🎯 Trivia (Modo Repaso)" : "🪙 Botín Minero"}
                 </h3>
-                <div class="vidas" aria-label="{intentosRestantes} monedas restantes">
+                <div class="vidas" aria-label="Botín de {intentosRestantes * 10} monedas">
                     {#each vidas as viva}
-                        <span class="vida" class:perdida={!viva} aria-hidden="true" title={viva ? "Intento disponible" : "Intento perdido"}>
+                        <span class="vida" class:perdida={!viva} aria-hidden="true" title={viva ? "10 Monedas Áureas" : "Moneda perdida"}>
                             <svg class="moneda-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="12" cy="12" r="10.2" class="moneda-borde" />
                                 <circle cx="12" cy="12" r="8.2" class="moneda-cuerpo" />
@@ -191,6 +193,7 @@
                             </svg>
                         </span>
                     {/each}
+                    <span class="botin-badge">+{intentosRestantes * 10} 🪙</span>
                 </div>
             </div>
             <button
@@ -235,18 +238,18 @@
         {#if resultado === "correcta"}
             <p class="mensaje exito" role="status">
                 {#if modoRevisar}
-                    ✨ ¡Has completado esta trivia! Respuesta correcta fijada.
+                    ✨ ¡Has completado esta trivia! Botín asegurado: <strong>+{intentosRestantes * 10} 🪙</strong>.
                 {:else}
-                    ✨ ¡Excelente respuesta! Desbloqueando tu sello...
+                    ✨ ¡Excelente respuesta! Ganaste <strong>+{intentosRestantes * 10} Monedas Áureas 🪙</strong>.
                 {/if}
             </p>
         {:else if resultado === "fallida"}
             <p class="mensaje error" role="alert">
-                💔 Se acabaron los intentos de hoy. Vuelve mañana.
+                💔 Se agotó el botín de hoy. Vuelve mañana a intentarlo.
             </p>
         {:else if intentosRestantes < MAX_INTENTOS}
             <p class="mensaje aviso" role="status">
-                ⚠️ Respuesta incorrecta. Te quedan {intentosRestantes} {intentosRestantes === 1 ? 'intento' : 'intentos'}.
+                ⚠️ Opción incorrecta. Botín restante: <strong>+{intentosRestantes * 10} 🪙</strong>.
             </p>
         {/if}
 
@@ -413,6 +416,15 @@
         filter: grayscale(100%) brightness(0.28);
         opacity: 0.35;
         transform: scale(0.8);
+    }
+
+    .botin-badge {
+        font-family: 'Cinzel', serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--gold-bright, #f2c94c);
+        margin-left: 2px;
+        letter-spacing: 0.5px;
     }
 
     /* ─── Tarjeta de pregunta ────────────────────────────────────── */

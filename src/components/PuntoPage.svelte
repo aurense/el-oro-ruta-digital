@@ -47,6 +47,7 @@
     let selloRecienGanado = false;
     let faseInicializada = yaObtenidoInicial;
     let intentosTriviaUsados = 1;
+    let monedasGanadasEstaPartida = 40;
     // Variable para controlar la visibilidad de la zona principal (transición fade)
     let zonaVisible = true;
 
@@ -116,10 +117,12 @@
         event?: CustomEvent<{
             vidasRestantes?: number;
             intentosUsados?: number;
+            monedasGanadas?: number;
         }>,
     ) {
         const vidas = event?.detail?.vidasRestantes ?? 3;
         intentosTriviaUsados = event?.detail?.intentosUsados ?? 4 - vidas;
+        monedasGanadasEstaPartida = event?.detail?.monedasGanadas ?? Math.max(10, vidas * 10);
         if (uid) {
             registrarResultadoTrivia(uid, punto.id, true, vidas, origen);
         }
@@ -175,6 +178,7 @@
         // 1. Actualización optimista inmediata en userStore
         userStore.update((s) => ({
             ...s,
+            monedas: (s.monedas || 0) + monedasGanadasEstaPartida,
             sellos: [
                 ...s.sellos,
                 {
@@ -248,8 +252,8 @@
     }
 </script>
 
-<!-- Confetti (overlay fijo, no desplaza nada) -->
-{#if selloRecienGanado && confettiPiezas.length > 0}
+<!-- Confetti animado (solo en celebración) -->
+{#if fase === "selloGanado" && selloRecienGanado && confettiPiezas.length > 0}
     <div class="confetti-container" aria-hidden="true">
         {#each confettiPiezas as p}
             <span
@@ -268,16 +272,37 @@
 {/if}
 
 <div class="punto-page">
-    <!-- ─── Encabezado compacto: miniatura + nombre + descripción ─── -->
+    <!-- ─── Header compacto ────────────────────────────────────────── -->
     <header class="punto-header">
-        <img src={punto.imagenMiniatura} alt={punto.nombre} class="miniatura" />
-        <div class="header-texto">
-            <h1 class="header-titulo">{punto.nombre}</h1>
-            <p class="header-desc">{punto.descripcionCorta}</p>
+        <a href="/" class="btn-volver" title="Volver al pasaporte">
+            <svg
+                class="btn-volver-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+            >
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Pasaporte</span>
+        </a>
+        <div class="header-right">
+            <span class="monedas-contador-header" title="Tus Monedas Áureas">
+                🪙 {$userStore.monedas || 0}
+            </span>
+            <div class="punto-badges">
+                {#if yaTieneSello}
+                    <span class="badge-sello-obtenido">✓ Sello obtenido</span>
+                {/if}
+            </div>
         </div>
     </header>
 
-    <!-- ─── Zona principal: cambia entre fases con fade ─────────── -->
+    <!-- ─── Zona principal de fase ─────────────────────────────────── -->
     <main
         class="punto-main"
         class:zona-visible={zonaVisible}
@@ -286,23 +311,38 @@
         <!-- ─ Fase: AUDIO ─ -->
         {#if fase === "audio"}
             <div class="vista-fase">
+                <!-- Miniatura compacta del lugar -->
+                <div class="punto-mini-card">
+                    <img
+                        src={punto.imagenMiniatura}
+                        alt={punto.nombre}
+                        class="punto-img-mini"
+                    />
+                    <div class="punto-mini-info">
+                        <h1 class="punto-nombre">{punto.nombre}</h1>
+                        <p class="punto-desc">{punto.descripcionCorta}</p>
+                    </div>
+                </div>
+
+                <!-- Reproductor de audio -->
                 <AudioPlayer
                     audioURL={punto.audioURL}
                     duracion={punto.duracion}
+                    puntoId={punto.id}
+                    puntoNombre={punto.nombre}
                     permitirCerrar={yaTieneSello}
                     on:ended={onAudioEnded}
                     on:cerrar={onCerrarAudio}
                 />
             </div>
 
-            <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
+            <!-- ─ Fase: TRIVIA (Desafío interactivo con Vidas) ─ -->
         {:else if fase === "trivia"}
             <div class="vista-fase">
                 <Trivia
                     pregunta={punto.trivia.pregunta}
                     opciones={punto.trivia.opciones}
                     puntoId={punto.id}
-                    modoRevisar={false}
                     on:success={onTriviaSuccess}
                     on:failed={onTriviaFailed}
                     on:cerrar={() => cambiarFase("audio")}
@@ -323,7 +363,7 @@
                 />
             </div>
 
-            <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
+            <!-- ─ Fase: SELLO GANADO (Celebración & Recompensa) ─ -->
         {:else if fase === "selloGanado"}
             <div class="vista-fase vista-sello">
                 <div class="badge-wrapper">
@@ -340,6 +380,13 @@
                     {selloRecienGanado ? "¡SELLO OBTENIDO!" : "SELLO OBTENIDO"}
                 </p>
                 <h2 class="celebracion-nombre">{punto.nombre}</h2>
+
+                <!-- Píldora de Monedas Áureas Ganadas -->
+                <div class="monedas-ganadas-badge">
+                    <span class="monedas-ganadas-icon">🪙</span>
+                    <span class="monedas-ganadas-txt">+{monedasGanadasEstaPartida} Monedas Áureas</span>
+                </div>
+
                 <p class="celebracion-contador">
                     {#if selloRecienGanado}
                         Tu pasaporte: <strong>{sellos.length}</strong> de
@@ -469,49 +516,149 @@
     .punto-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding-bottom: 12px;
+        justify-content: space-between;
+        padding-bottom: 10px;
         border-bottom: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
         flex-shrink: 0;
     }
 
-    .miniatura {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: var(--radius-md, 14px);
-        flex-shrink: 0;
+    .btn-volver {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted, #B8A89A);
+        text-decoration: none;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: var(--radius-full, 9999px);
+        background: rgba(212, 160, 23, 0.08);
         border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.3));
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s ease;
+    }
+    .btn-volver:hover {
+        color: var(--gold-bright, #F2C94C);
+        border-color: var(--gold-bright, #F2C94C);
+        background: rgba(212, 160, 23, 0.16);
+        transform: translateX(-2px);
+    }
+    .btn-volver-icon {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
     }
 
-    .header-texto {
-        flex: 1;
-        min-width: 0;
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    .header-titulo {
-        margin: 0 0 4px;
-        font-family: "Cinzel", serif;
-        font-size: 1.15rem;
+    .badge-sello-obtenido {
+        font-size: 0.72rem;
         font-weight: 700;
-        color: var(--text-primary, #f5e6c8);
+        color: var(--success, #4CAF82);
+        background: rgba(76, 175, 130, 0.15);
+        border: 1px solid rgba(76, 175, 130, 0.35);
+        padding: 3px 8px;
+        border-radius: var(--radius-full, 9999px);
+    }
+
+    .monedas-contador-header {
+        font-family: 'Cinzel', serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--gold-bright, #f2c94c);
+        background: rgba(242, 201, 76, 0.1);
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.35));
+        padding: 3px 8px;
+        border-radius: var(--radius-full, 9999px);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .monedas-ganadas-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, rgba(242, 201, 76, 0.18) 0%, rgba(212, 160, 23, 0.28) 100%);
+        border: 1px solid var(--gold-bright, #f2c94c);
+        border-radius: var(--radius-full, 9999px);
+        padding: 4px 12px;
+        box-shadow: 0 0 16px rgba(242, 201, 76, 0.35);
+        animation: fadeup 0.5s 0.45s both, pulso-oro 2s infinite ease-in-out;
+        margin: 2px 0;
+    }
+    @keyframes pulso-oro {
+        0%, 100% { box-shadow: 0 0 10px rgba(242, 201, 76, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(242, 201, 76, 0.6); }
+    }
+
+    .monedas-ganadas-icon {
+        font-size: 1rem;
+    }
+    .monedas-ganadas-txt {
+        font-family: 'Cinzel', serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--gold-bright, #f2c94c);
+        letter-spacing: 0.5px;
+    }
+
+    /* ─── Mini Card del Punto en Fase Audio ─────────────────────── */
+    .punto-mini-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 440px;
+        background: var(--bg-card, #1E1008);
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.28));
+        border-radius: var(--radius-md, 14px);
+        padding: 8px 12px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        text-align: left;
+    }
+
+    .punto-img-mini {
+        width: 52px;
+        height: 52px;
+        object-fit: cover;
+        border-radius: 10px;
+        flex-shrink: 0;
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.4));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .punto-mini-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .punto-nombre {
+        font-family: 'Cinzel', serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary, #F5EDE4);
         line-height: 1.2;
+        margin: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .header-desc {
+    .punto-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted, #B8A89A);
+        line-height: 1.35;
         margin: 0;
-        font-size: 0.8rem;
-        color: var(--text-muted, #a08060);
-        /* Truncar a 2 líneas */
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        line-height: 1.4;
     }
 
     /* ─── Zona principal: ocupa el espacio restante ──────────────── */
@@ -779,16 +926,16 @@
     /* ─── Responsive: pantallas de baja altura ───────────────────── */
     @media (max-height: 620px) {
         .punto-header {
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
-        .miniatura {
-            width: 46px;
-            height: 46px;
+        .punto-img-mini {
+            width: 44px;
+            height: 44px;
         }
-        .header-titulo {
-            font-size: 0.98rem;
+        .punto-nombre {
+            font-size: 0.95rem;
         }
-        .header-desc {
+        .punto-desc {
             -webkit-line-clamp: 1;
         }
         .badge-wrapper {

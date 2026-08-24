@@ -302,6 +302,7 @@ const {
                   }))
                 : s.sellos,
               sellosAliados: datos?.sellosAliados || s.sellosAliados,
+              monedas: typeof datos?.monedas === "number" ? datos.monedas : s.monedas,
               cargando: false,
             }));
           });

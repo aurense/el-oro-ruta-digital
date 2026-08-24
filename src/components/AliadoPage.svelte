@@ -44,9 +44,10 @@
         const ahora = new Date().toISOString();
         const nuevoSello = { fecha: ahora, origen };
 
-        // 1. Actualización optimista inmediata en userStore (0 ms)
+        // 1. Actualización optimista inmediata en userStore (+20 Monedas de Aliado)
         userStore.update((s) => ({
             ...s,
+            monedas: (s.monedas || 0) + 20,
             sellosAliados: {
                 ...s.sellosAliados,
                 [aliado.id]: nuevoSello,
@@ -155,14 +156,17 @@
             </svg>
             <span>Pasaporte</span>
         </a>
-        <div class="origen-tag">
-            {#if origen === "qr"}
-                <span class="tag-qr">📷 QR en Local</span>
-            {:else if origen === "sello"}
-                <span class="tag-sello">📖 Pasaporte</span>
-            {:else}
-                <span class="tag-directo">🤝 Aliado</span>
-            {/if}
+        <div class="top-nav-right">
+            <span class="monedas-contador" title="Tus Monedas Áureas">🪙 {$userStore.monedas || 0}</span>
+            <div class="origen-tag">
+                {#if origen === "qr"}
+                    <span class="tag-qr">📷 QR en Local</span>
+                {:else if origen === "sello"}
+                    <span class="tag-sello">📖 Pasaporte</span>
+                {:else}
+                    <span class="tag-directo">🤝 Aliado</span>
+                {/if}
+            </div>
         </div>
     </header>
 
@@ -227,6 +231,11 @@
                 <span class="etiqueta-obtenido">
                     {selloRecienGanado ? "¡SELLO DESBLOQUEADO!" : "SELLO REGISTRADO"}
                 </span>
+                {#if selloRecienGanado}
+                    <div class="monedas-bono-badge">
+                        <span>🪙 +20 Monedas de Aliado</span>
+                    </div>
+                {/if}
                 <p class="mensaje-exito">
                     {selloRecienGanado ? "Has ganado la insignia de este aliado" : "Insignia registrada en tu pasaporte"}
                 </p>
@@ -301,6 +310,38 @@
         justify-content: space-between;
         align-items: center;
         padding: 4px 2px;
+    }
+
+    .top-nav-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .monedas-contador {
+        font-family: 'Cinzel', serif;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--gold-bright, #F2C94C);
+        background: rgba(242, 201, 76, 0.1);
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.35));
+        padding: 3px 8px;
+        border-radius: var(--radius-full, 999px);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .monedas-bono-badge {
+        font-family: 'Cinzel', serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--gold-bright, #F2C94C);
+        background: linear-gradient(135deg, rgba(242, 201, 76, 0.18) 0%, rgba(212, 160, 23, 0.28) 100%);
+        border: 1px solid var(--gold-bright, #F2C94C);
+        padding: 3px 10px;
+        border-radius: var(--radius-full, 999px);
+        box-shadow: 0 0 10px rgba(242, 201, 76, 0.35);
+        animation: pop-insignia 0.4s ease forwards;
+        margin: 2px 0;
     }
 
     .btn-volver {
