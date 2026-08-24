@@ -53,10 +53,30 @@
             : `geo:${lat},${lng}?q=${lat},${lng}(${nombreEnc})`;
         window.open(url, "_blank");
     }
+
+    // ─── Carrusel ─────────────────────────────────────────────────
+    let carruselEl: HTMLElement;
+    let indiceActivo = 0;
+
+    function onCarruselScroll() {
+        if (!carruselEl) return;
+        const itemWidth =
+            carruselEl.scrollWidth /
+            (puntos.length + (obtenidos === total && total > 0 ? 1 : 0));
+        indiceActivo = Math.round(carruselEl.scrollLeft / itemWidth);
+    }
+
+    function scrollAIndice(i: number) {
+        if (!carruselEl) return;
+        const itemWidth =
+            carruselEl.scrollWidth /
+            (puntos.length + (obtenidos === total && total > 0 ? 1 : 0));
+        carruselEl.scrollTo({ left: itemWidth * i, behavior: "smooth" });
+    }
 </script>
 
 <div class="pasaporte">
-    <!-- Encabezado del pasaporte -->
+    <!-- Encabezado compacto del pasaporte -->
     <header class="pasaporte-header">
         <div class="rango-emblema-wrapper">
             {#if rango.id === "visitante"}
@@ -260,7 +280,7 @@
     <!-- Barra de XP / progreso -->
     <div class="xp-section">
         <div class="xp-labels">
-            <span class="xp-texto">Visitas Registradas</span>
+            <span class="xp-texto">Progreso del Pasaporte</span>
             <span class="xp-contador">{obtenidos} / {total}</span>
         </div>
         <div
@@ -268,6 +288,7 @@
             role="progressbar"
             aria-valuenow={obtenidos}
             aria-valuemax={total}
+            aria-label="{obtenidos} de {total} sellos obtenidos"
         >
             <div
                 class="xp-fill"
@@ -277,72 +298,114 @@
         </div>
     </div>
 
-    <!-- Cuadrícula de insignias -->
-    <div class="grid">
-        {#each puntos as punto}
-            {@const obtenida = sellos.some((s) => s.puntoId === punto.id)}
-            <StampBadge
-                imagen={punto.insigniaURL}
-                nombre={punto.nombre}
-                puntoId={punto.id}
-                {obtenida}
-                on:seleccionar={() => abrirModal(punto)}
-            />
-        {/each}
+    <!-- ─── Carrusel horizontal de insignias ──────────────────── -->
+    <div class="carrusel-wrap">
+        <div
+            class="carrusel"
+            bind:this={carruselEl}
+            on:scroll={onCarruselScroll}
+            aria-label="Insignias del pasaporte"
+            role="region"
+        >
+            {#each puntos as punto, i}
+                {@const obtenida = sellos.some((s) => s.puntoId === punto.id)}
+                <div class="carrusel-item">
+                    <StampBadge
+                        imagen={punto.insigniaURL}
+                        nombre={punto.nombre}
+                        puntoId={punto.id}
+                        {obtenida}
+                        on:seleccionar={() => abrirModal(punto)}
+                    />
+                </div>
+            {/each}
+
+            <!-- Última tarjeta: BONUS STAGE (solo si pasaporte completo) -->
+            {#if obtenidos === total && total > 0}
+                <div class="carrusel-item carrusel-bonus">
+                    <div class="bonus-card">
+                        <div class="completado-emblema-wrap">
+                            <div
+                                class="completado-aura"
+                                aria-hidden="true"
+                            ></div>
+                            <div class="completado-icono">☕</div>
+                        </div>
+                        <p class="bonus-etiqueta">BONUS STAGE</p>
+                        <h3 class="bonus-titulo">¡Completado!</h3>
+                        <div class="voucher-card">
+                            <div class="voucher-header">
+                                <span class="voucher-tipo"
+                                    >CUPÓN DE RECOMPENSA</span
+                                >
+                                <span class="voucher-sello-icono">⛏️</span>
+                            </div>
+                            <div class="voucher-cuerpo">
+                                <h4 class="voucher-premio">
+                                    ☕ Un Café de Cortesía
+                                </h4>
+                                <p class="voucher-lugar">
+                                    En <strong>«La Gran Sociedad»</strong>
+                                </p>
+                            </div>
+                            <div class="voucher-footer">
+                                <div class="voucher-status">
+                                    <span class="status-dot" aria-hidden="true"
+                                    ></span>
+                                    <span class="status-texto">Canjeable</span>
+                                </div>
+                                <span class="voucher-codigo"
+                                    >PASAPORTE-ELORO-OK</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+        </div>
+
+        <!-- Dots de posición (indicadores del carrusel) -->
+        <div class="carrusel-dots" aria-hidden="true">
+            {#each puntos as _, i}
+                <button
+                    class="dot"
+                    class:dot-activo={indiceActivo === i}
+                    on:click={() => scrollAIndice(i)}
+                    aria-label="Ir a insignia {i + 1}"
+                ></button>
+            {/each}
+            {#if obtenidos === total && total > 0}
+                <button
+                    class="dot dot-bonus"
+                    class:dot-activo={indiceActivo === puntos.length}
+                    on:click={() => scrollAIndice(puntos.length)}
+                    aria-label="Bonus Stage"
+                ></button>
+            {/if}
+        </div>
     </div>
 
-    <!-- Mensaje de completado / Voucher de Recompensa -->
-    {#if obtenidos === total && total > 0}
-        <div class="completado" role="region" aria-label="Recompensa de Pasaporte Completado">
-            <!-- Badge superior -->
-            <div class="completado-badge">
-                <span class="badge-estrella">✨</span>
-                <span>LOGRO DESBLOQUEADO • EXPLORADOR MAESTRO</span>
-                <span class="badge-estrella">✨</span>
-            </div>
-
-            <!-- Emblema con aura -->
-            <div class="completado-emblema-wrap">
-                <div class="completado-aura" aria-hidden="true"></div>
-                <div class="completado-icono">☕</div>
-            </div>
-
-            <h3 class="completado-titulo">¡Pasaporte Completado al 100%!</h3>
-            <p class="completado-bajada">
-                Has recorrido todos los puntos históricos de El Oro, Pueblo Mágico Minero.
-            </p>
-
-            <!-- Ticket / Voucher de Cortesía -->
-            <div class="voucher-card">
-                <div class="voucher-header">
-                    <span class="voucher-tipo">CUPÓN DE RECOMPENSA</span>
-                    <span class="voucher-sello-icono">⛏️</span>
-                </div>
-
-                <div class="voucher-cuerpo">
-                    <h4 class="voucher-premio">☕ Un Café de Cortesía</h4>
-                    <p class="voucher-lugar">En Restaurante <strong>«La Gran Sociedad»</strong></p>
-                    <p class="voucher-nota">
-                        Aplica en tu consumo presentando este pasaporte digital en tu visita.
-                    </p>
-                </div>
-
-                <div class="voucher-footer">
-                    <div class="voucher-status">
-                        <span class="status-dot" aria-hidden="true"></span>
-                        <span class="status-texto">Recompensa activa y canjeable</span>
-                    </div>
-                    <span class="voucher-codigo">VAL: PASAPORTE-ELORO-OK</span>
-                </div>
-            </div>
-        </div>
-    {/if}
+    <!-- Footer discreto -->
+    <div class="footer-bar">
+        <a
+            href="https://ko-fi.com/aurense"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="donation-link"
+            aria-label="Apoyar el proyecto con una donación"
+            >☕ Donativos voluntarios</a
+        >
+    </div>
 </div>
 
 <!-- Modal de celebración (obtenido) o Tooltip de indicaciones (no visitado) -->
 {#if true}
-    {@const esObtenida = Boolean(puntoModal && sellos.some((s) => s.puntoId === puntoModal?.id))}
-    {@const selloActual = puntoModal ? sellos.find((s) => s.puntoId === puntoModal?.id) : null}
+    {@const esObtenida = Boolean(
+        puntoModal && sellos.some((s) => s.puntoId === puntoModal?.id),
+    )}
+    {@const selloActual = puntoModal
+        ? sellos.find((s) => s.puntoId === puntoModal?.id)
+        : null}
     <ModalSello
         visible={esObtenida}
         punto={puntoModal}
@@ -469,20 +532,26 @@
 {/if}
 
 <style>
+    /* ─── Contenedor principal: hereda 100% del shell ────────────── */
     .pasaporte {
+        height: 100%;
         max-width: 520px;
         margin: 0 auto;
-        padding: 24px 16px 48px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
     }
 
-    /* ─── Header ─────────────────────────────────────────────────── */
+    /* ─── Header compacto ────────────────────────────────────────── */
     .pasaporte-header {
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        margin-bottom: 26px;
-        padding-top: 12px;
+        padding: 14px 16px 10px;
+        flex-shrink: 0;
     }
 
     /* ─── Medallones de Época ────────────────────────────────────── */
@@ -557,9 +626,9 @@
 
     .pasaporte-titulo {
         font-family: "Cinzel", serif;
-        font-size: 1.6rem;
+        font-size: 1.35rem;
         font-weight: 700;
-        margin: 0 0 8px;
+        margin: 0 0 6px;
         background: linear-gradient(
             135deg,
             var(--gold-bright, #f2c94c),
@@ -597,13 +666,14 @@
         font-weight: 500;
     }
 
-    /* ─── Barra XP ───────────────────────────────────────────────── */
+    /* ─── Barra XP compacta ──────────────────────────────────────── */
     .xp-section {
-        margin-bottom: 28px;
-        padding: 16px 20px;
+        flex-shrink: 0;
+        margin: 0 16px 10px;
+        padding: 12px 16px;
         background: var(--bg-card, #1e1008);
         border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
-        border-radius: 14px;
+        border-radius: 12px;
     }
     .xp-labels {
         display: flex;
@@ -667,11 +737,155 @@
         }
     }
 
-    /* ─── Cuadrícula ─────────────────────────────────────────────── */
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
+    /* ─── Carrusel horizontal ────────────────────────────────────── */
+    .carrusel-wrap {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .carrusel {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        gap: 0;
+        padding: 8px 0;
+        /* Ocultar scrollbar nativa */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .carrusel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .carrusel-item {
+        flex: 0 0 calc(100vw - 40px);
+        max-width: 300px;
+        scroll-snap-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        box-sizing: border-box;
+    }
+
+    /* Bonus Stage: tarjeta especial al final del carrusel */
+    .carrusel-bonus {
+        flex: 0 0 calc(100vw - 40px);
+        max-width: 300px;
+    }
+    .bonus-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 16px;
+        background: linear-gradient(165deg, #1e1008, #2a1a0a);
+        border: 1px solid rgba(242, 201, 76, 0.45);
+        border-radius: 20px;
+        width: 100%;
+        text-align: center;
+        box-shadow:
+            0 0 0 1px rgba(212, 160, 23, 0.1),
+            0 16px 40px rgba(0, 0, 0, 0.7);
+        position: relative;
+        overflow: hidden;
+    }
+    /* Destello superior en Bonus Card */
+    .bonus-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #f2c94c, transparent);
+        animation: destello-linea 3.5s infinite ease-in-out;
+    }
+    .bonus-etiqueta {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--gold-mid, #d4a017);
+        margin: 0;
+        background: rgba(212, 160, 23, 0.12);
+        border: 1px solid rgba(212, 160, 23, 0.3);
+        border-radius: 999px;
+        padding: 3px 10px;
+    }
+    .bonus-titulo {
+        font-family: "Cinzel", serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #f2c94c, #d4a017);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* ─── Indicadores de posición (dots) ────────────────────────── */
+    .carrusel-dots {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 0 4px;
+    }
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(212, 160, 23, 0.22);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .dot-activo {
+        background: var(--gold-bright, #f2c94c);
+        width: 18px;
+        border-radius: 3px;
+        box-shadow: 0 0 6px rgba(242, 201, 76, 0.5);
+    }
+    .dot-bonus {
+        background: rgba(242, 201, 76, 0.35);
+    }
+    .dot-bonus.dot-activo {
+        background: #f2c94c;
+    }
+
+    /* ─── Footer discreto ───────────────────────────────────────── */
+    .footer-bar {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        padding: 6px 0 10px;
+    }
+    .donation-link {
+        font-family: "Inter", sans-serif;
+        font-size: 0.74rem;
+        color: var(--text-dim, #6b5040);
+        text-decoration: none;
+        padding: 5px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 160, 23, 0.12);
+        transition: all 0.2s;
+    }
+    .donation-link:hover {
+        color: var(--gold-mid, #d4a017);
+        border-color: rgba(212, 160, 23, 0.3);
+        background: rgba(212, 160, 23, 0.06);
     }
 
     /* ─── Completado / Voucher de Recompensa ─────────────────────── */
@@ -697,7 +911,8 @@
             0 0 0 1px rgba(212, 160, 23, 0.12),
             0 24px 60px rgba(0, 0, 0, 0.8),
             0 0 45px rgba(212, 160, 23, 0.2);
-        animation: entrada-voucher 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation: entrada-voucher 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)
+            forwards;
     }
     @keyframes entrada-voucher {
         from {
@@ -727,8 +942,13 @@
         animation: destello-linea 3.5s infinite ease-in-out;
     }
     @keyframes destello-linea {
-        0% { left: -100%; }
-        50%, 100% { left: 100%; }
+        0% {
+            left: -100%;
+        }
+        50%,
+        100% {
+            left: 100%;
+        }
     }
 
     /* Badge superior */
@@ -771,8 +991,15 @@
         animation: latido-aura 2.5s infinite ease-in-out;
     }
     @keyframes latido-aura {
-        0%, 100% { transform: scale(1); opacity: 0.6; }
-        50% { transform: scale(1.25); opacity: 1; }
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.6;
+        }
+        50% {
+            transform: scale(1.25);
+            opacity: 1;
+        }
     }
     .completado-icono {
         width: 56px;
@@ -896,8 +1123,15 @@
         animation: pulso-status 2s infinite;
     }
     @keyframes pulso-status {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.3); opacity: 0.7; }
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.3);
+            opacity: 0.7;
+        }
     }
     .status-texto {
         font-size: 0.74rem;

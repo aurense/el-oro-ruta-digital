@@ -35,7 +35,9 @@
     let selloRecienGanado = false;
     let faseInicializada = false;
     let intentosTriviaUsados = 1;
-    // Para la animación del confetti
+    // Variable para controlar la visibilidad de la zona principal (transición fade)
+    let zonaVisible = true;
+
     let confettiPiezas: {
         x: number;
         color: string;
@@ -49,7 +51,7 @@
     $: sellos = $userStore.sellos;
     $: yaTieneSello = Boolean(sellos.some((s) => s.puntoId === punto.id));
 
-    // Si al cargar o hidratar el store el usuario ya tiene el sello, iniciar directamente en selloGanado
+    // Si al hidratar el store el usuario ya tiene el sello → ir directo a selloGanado
     $: if (yaTieneSello && !faseInicializada && fase === "audio") {
         fase = "selloGanado";
         faseInicializada = true;
@@ -65,11 +67,21 @@
         }
     });
 
+    /** Cambia de fase con una breve transición de desvanecimiento */
+    async function cambiarFase(
+        nuevaFase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida",
+    ) {
+        zonaVisible = false;
+        await new Promise((r) => setTimeout(r, 200));
+        fase = nuevaFase;
+        zonaVisible = true;
+    }
+
     function onAudioEnded() {
         if (uid) {
             registrarAudioEscuchado(uid, punto.id, origen);
         }
-        fase = yaTieneSello ? "triviaRevisit" : "trivia";
+        cambiarFase(yaTieneSello ? "triviaRevisit" : "trivia");
     }
 
     function onTriviaSuccess(
@@ -81,7 +93,7 @@
             registrarResultadoTrivia(uid, punto.id, true, vidas, origen);
         }
         if (yaTieneSello) {
-            fase = "selloGanado";
+            cambiarFase("selloGanado");
             return;
         }
         if (sellos.length === 0 && !perfil) {
@@ -97,7 +109,7 @@
         if (uid) {
             registrarResultadoTrivia(uid, punto.id, false, 0, origen);
         }
-        fase = "fallida";
+        cambiarFase("fallida");
     }
 
     async function onPerfilGuardado(
@@ -167,9 +179,8 @@
     }
 
     function activarCelebracion() {
-        fase = "selloGanado";
         generarConfetti();
-        // Vibración háptica: patrón de fanfarria
+        cambiarFase("selloGanado");
         if ("vibrate" in navigator) {
             navigator.vibrate([80, 40, 80, 40, 200]);
         }
@@ -200,257 +211,301 @@
     }
 
     function verTrivia() {
-        fase = "triviaRevisit";
+        cambiarFase("triviaRevisit");
     }
 
     function escucharAudio() {
-        fase = "audio";
+        cambiarFase("audio");
     }
 </script>
 
-<div class="punto-page">
-    <!-- Hero image con gradiente overlay -->
-    <div class="hero">
-        <img src={punto.imagenMiniatura} alt={punto.nombre} class="hero-img" />
-        <div class="hero-overlay">
-            <h1 class="hero-titulo">{punto.nombre}</h1>
-        </div>
+<!-- Confetti (overlay fijo, no desplaza nada) -->
+{#if selloRecienGanado && confettiPiezas.length > 0}
+    <div class="confetti-container" aria-hidden="true">
+        {#each confettiPiezas as p}
+            <span
+                class="confetti-pieza"
+                style="
+                    left: {p.x}%;
+                    background: {p.color};
+                    width: {p.size}px;
+                    height: {p.size}px;
+                    animation-delay: {p.delay}s;
+                    animation-duration: {p.duration}s;
+                "
+            ></span>
+        {/each}
     </div>
+{/if}
 
-    <!-- Descripción -->
-    <p class="descripcion">{punto.descripcionCorta}</p>
-
-    <!-- ─ Fase: AUDIO ─ -->
-    {#if fase === "audio"}
-        <AudioPlayer
-            audioURL={punto.audioURL}
-            duracion={punto.duracion}
-            on:ended={onAudioEnded}
+<div class="punto-page">
+    <!-- ─── Encabezado compacto: miniatura + nombre + descripción ─── -->
+    <header class="punto-header">
+        <img
+            src={punto.imagenMiniatura}
+            alt={punto.nombre}
+            class="miniatura"
         />
+        <div class="header-texto">
+            <h1 class="header-titulo">{punto.nombre}</h1>
+            <p class="header-desc">{punto.descripcionCorta}</p>
+        </div>
+    </header>
 
-        <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
-    {:else if fase === "trivia"}
-        <Trivia
-            pregunta={punto.trivia.pregunta}
-            opciones={punto.trivia.opciones}
-            puntoId={punto.id}
-            modoRevisar={false}
-            on:success={onTriviaSuccess}
-            on:failed={onTriviaFailed}
-            on:cerrar={() => {
-                fase = "audio";
-            }}
-        />
+    <!-- ─── Zona principal: cambia entre fases con fade ─────────── -->
+    <main class="punto-main" class:zona-visible={zonaVisible} class:zona-oculta={!zonaVisible}>
 
-        <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
-    {:else if fase === "triviaRevisit"}
-        <Trivia
-            pregunta={punto.trivia.pregunta}
-            opciones={punto.trivia.opciones}
-            puntoId={punto.id}
-            modoRevisar={true}
-            on:success={onTriviaSuccess}
-            on:failed={onTriviaFailed}
-            on:cerrar={() => {
-                fase = "selloGanado";
-            }}
-        />
-
-        <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
-    {:else if fase === "selloGanado"}
-        <!-- Confetti solo en la primera celebración de la sesión -->
-        {#if selloRecienGanado && confettiPiezas.length > 0}
-            <div class="confetti-container" aria-hidden="true">
-                {#each confettiPiezas as p}
-                    <span
-                        class="confetti-pieza"
-                        style="
-                            left: {p.x}%;
-                            background: {p.color};
-                            width: {p.size}px;
-                            height: {p.size}px;
-                            animation-delay: {p.delay}s;
-                            animation-duration: {p.duration}s;
-                        "
-                    ></span>
-                {/each}
-            </div>
-        {/if}
-
-        <div class="celebracion">
-            <!-- Aura giratoria + badge -->
-            <div class="badge-wrapper">
-                <div class="aura" aria-hidden="true"></div>
-                <div class="aura aura--lenta" aria-hidden="true"></div>
-                <img
-                    src={punto.insigniaURL}
-                    alt="Sello de {punto.nombre}"
-                    class="insignia-celebracion"
+        <!-- ─ Fase: AUDIO ─ -->
+        {#if fase === "audio"}
+            <div class="vista-fase">
+                <AudioPlayer
+                    audioURL={punto.audioURL}
+                    duracion={punto.duracion}
+                    on:ended={onAudioEnded}
                 />
             </div>
 
-            <p class="celebracion-etiqueta">
-                {selloRecienGanado ? "¡SELLO OBTENIDO!" : "SELLO OBTENIDO"}
-            </p>
-            <h2 class="celebracion-nombre">{punto.nombre}</h2>
-            <p class="celebracion-contador">
-                {#if selloRecienGanado}
-                    Tu pasaporte: <strong>{sellos.length}</strong> de
-                    <strong>3</strong> sellos
-                {:else}
-                    Ya has obtenido este sello en tu pasaporte.
-                {/if}
-            </p>
-
-            <div class="celebracion-acciones">
-                <button class="btn-gold" on:click={irAlPasaporte}>
-                    <svg
-                        class="btn-icono"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                    >
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path
-                            d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
-                        />
-                        <circle
-                            cx="12"
-                            cy="9.5"
-                            r="2.5"
-                            fill="currentColor"
-                            fill-opacity="0.35"
-                        />
-                        <path d="M12 7.5v4" />
-                        <path d="M10 9.5h4" />
-                    </svg>
-                    <span>Ver mi pasaporte</span>
-                </button>
-                <button class="btn-outline" on:click={verTrivia}>
-                    <svg
-                        class="btn-icono"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                    >
-                        <circle cx="12" cy="12" r="9.5" />
-                        <polygon
-                            points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"
-                            fill="currentColor"
-                            fill-opacity="0.35"
-                        />
-                        <circle cx="12" cy="12" r="1.3" fill="currentColor" />
-                    </svg>
-                    <span>&nbsp;Desafío minero</span>
-                </button>
-                <button class="btn-outline" on:click={escucharAudio}>
-                    <svg
-                        class="btn-icono"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M11 5L6 9H2v6h4l5 4V5z"
-                            fill="currentColor"
-                            fill-opacity="0.3"
-                        />
-                        <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-                        <path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6" />
-                    </svg>
-                    <span>&nbsp; Escuchar relato</span>
-                </button>
+        <!-- ─ Fase: TRIVIA (Primera obtención) ─ -->
+        {:else if fase === "trivia"}
+            <div class="vista-fase">
+                <Trivia
+                    pregunta={punto.trivia.pregunta}
+                    opciones={punto.trivia.opciones}
+                    puntoId={punto.id}
+                    modoRevisar={false}
+                    on:success={onTriviaSuccess}
+                    on:failed={onTriviaFailed}
+                    on:cerrar={() => cambiarFase("audio")}
+                />
             </div>
-        </div>
+
+        <!-- ─ Fase: TRIVIA REVISIT (Modo Repaso) ─ -->
+        {:else if fase === "triviaRevisit"}
+            <div class="vista-fase">
+                <Trivia
+                    pregunta={punto.trivia.pregunta}
+                    opciones={punto.trivia.opciones}
+                    puntoId={punto.id}
+                    modoRevisar={true}
+                    on:success={onTriviaSuccess}
+                    on:failed={onTriviaFailed}
+                    on:cerrar={() => cambiarFase("selloGanado")}
+                />
+            </div>
+
+        <!-- ─ Fase: SELLO GANADO 🎉 ─ -->
+        {:else if fase === "selloGanado"}
+            <div class="vista-fase vista-sello">
+                <div class="badge-wrapper">
+                    <div class="aura" aria-hidden="true"></div>
+                    <div class="aura aura--lenta" aria-hidden="true"></div>
+                    <img
+                        src={punto.insigniaURL}
+                        alt="Sello de {punto.nombre}"
+                        class="insignia-celebracion"
+                    />
+                </div>
+
+                <p class="celebracion-etiqueta">
+                    {selloRecienGanado ? "¡SELLO OBTENIDO!" : "SELLO OBTENIDO"}
+                </p>
+                <h2 class="celebracion-nombre">{punto.nombre}</h2>
+                <p class="celebracion-contador">
+                    {#if selloRecienGanado}
+                        Tu pasaporte: <strong>{sellos.length}</strong> de
+                        <strong>3</strong> sellos
+                    {:else}
+                        Ya has obtenido este sello en tu pasaporte.
+                    {/if}
+                </p>
+
+                <div class="celebracion-acciones">
+                    <button class="btn-gold" on:click={irAlPasaporte}>
+                        <svg
+                            class="btn-icono"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path
+                                d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+                            />
+                            <circle
+                                cx="12"
+                                cy="9.5"
+                                r="2.5"
+                                fill="currentColor"
+                                fill-opacity="0.35"
+                            />
+                            <path d="M12 7.5v4" />
+                            <path d="M10 9.5h4" />
+                        </svg>
+                        <span>Ver mi pasaporte</span>
+                    </button>
+                    <button class="btn-outline" on:click={verTrivia}>
+                        <svg
+                            class="btn-icono"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <circle cx="12" cy="12" r="9.5" />
+                            <polygon
+                                points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"
+                                fill="currentColor"
+                                fill-opacity="0.35"
+                            />
+                            <circle cx="12" cy="12" r="1.3" fill="currentColor" />
+                        </svg>
+                        <span>&nbsp;Desafío minero</span>
+                    </button>
+                    <button class="btn-outline" on:click={escucharAudio}>
+                        <svg
+                            class="btn-icono"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M11 5L6 9H2v6h4l5 4V5z"
+                                fill="currentColor"
+                                fill-opacity="0.3"
+                            />
+                            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                            <path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6" />
+                        </svg>
+                        <span>&nbsp; Escuchar relato</span>
+                    </button>
+                </div>
+            </div>
 
         <!-- ─ Fase: FALLIDA ─ -->
-    {:else if fase === "fallida"}
-        <div class="fallida-card">
-            <p class="fallida-icon">😞</p>
-            <h2>Mejor suerte mañana</h2>
-            <p>
-                Agotaste los intentos de hoy. Regresa mañana para intentarlo de
-                nuevo y obtener tu sello.
-            </p>
-            <a href="/" class="btn-outline" style="margin-top: 20px;"
-                >Volver al inicio</a
-            >
-        </div>
-    {/if}
+        {:else if fase === "fallida"}
+            <div class="vista-fase vista-fallida">
+                <p class="fallida-icon">😞</p>
+                <h2>Mejor suerte mañana</h2>
+                <p>
+                    Agotaste los intentos de hoy. Regresa mañana para intentarlo de
+                    nuevo y obtener tu sello.
+                </p>
+                <a href="/" class="btn-outline" style="margin-top: 20px;"
+                    >Volver al inicio</a
+                >
+            </div>
+        {/if}
+    </main>
 
-    <!-- Modal de datos de perfil -->
+    <!-- Modal de datos de perfil (overlay, no desplaza) -->
     <DataForm visible={mostrarDataForm} on:save={onPerfilGuardado} />
 </div>
 
 <style>
-    /* ─── Página de punto ──────────────────────────────────────────── */
+    /* ─── Layout principal: 100% del contenedor flex ────────────── */
     .punto-page {
-        max-width: 500px;
-        margin: 0 auto;
-        padding: 0 0 60px;
-    }
-
-    /* ─── Hero ─────────────────────────────────────────────────────── */
-    .hero {
-        position: relative;
-        width: 100%;
-        height: 240px;
-        overflow: hidden;
-        border-radius: 0 0 24px 24px;
-        margin-bottom: 20px;
-    }
-    .hero-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .hero-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            to top,
-            rgba(18, 9, 10, 0.9) 0%,
-            rgba(18, 9, 10, 0.3) 50%,
-            transparent 100%
-        );
         display: flex;
-        align-items: flex-end;
-        padding: 20px;
+        flex-direction: column;
+        height: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 12px 16px;
+        box-sizing: border-box;
+        overflow: hidden;
     }
-    .hero-titulo {
+
+    /* ─── Encabezado compacto ────────────────────────────────────── */
+    .punto-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
+        flex-shrink: 0;
+    }
+
+    .miniatura {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: var(--radius-md, 14px);
+        flex-shrink: 0;
+        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.3));
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-texto {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-titulo {
+        margin: 0 0 4px;
         font-family: "Cinzel", serif;
-        font-size: 1.5rem;
+        font-size: 1.15rem;
         font-weight: 700;
-        color: var(--text-primary);
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        color: var(--text-primary, #F5E6C8);
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .header-desc {
         margin: 0;
+        font-size: 0.8rem;
+        color: var(--text-muted, #A08060);
+        /* Truncar a 2 líneas */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
     }
 
-    /* ─── Descripción ───────────────────────────────────────────────── */
-    .descripcion {
-        font-size: 0.95rem;
-        color: var(--text-muted);
+    /* ─── Zona principal: ocupa el espacio restante ──────────────── */
+    .punto-main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 0;
+        overflow-y: auto;
+        /* Transición de opacidad entre fases */
+        transition: opacity 0.2s ease;
+    }
+
+    .zona-visible {
+        opacity: 1;
+    }
+
+    .zona-oculta {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* ─── Contenedor de vista por fase ──────────────────────────── */
+    .vista-fase {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
         text-align: center;
-        padding: 0 20px;
-        margin-bottom: 8px;
-        line-height: 1.6;
     }
 
-    /* ─── Confetti ──────────────────────────────────────────────────── */
+    /* ─── Confetti (overlay fijo, sin ocupar espacio de layout) ─── */
     .confetti-container {
         position: fixed;
         inset: 0;
@@ -480,27 +535,22 @@
         }
     }
 
-    /* ─── Celebración ───────────────────────────────────────────────── */
-    .celebracion {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        padding: 24px 20px 40px;
-        text-align: center;
+    /* ─── Sello ganado: celebración ──────────────────────────────── */
+    .vista-sello {
+        gap: 10px;
+        padding: 8px 0;
     }
 
     .badge-wrapper {
         position: relative;
-        width: 160px;
-        height: 160px;
+        width: 140px;
+        height: 140px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
     }
 
-    /* Aura giratoria tipo halo */
     .aura {
         position: absolute;
         inset: -16px;
@@ -529,8 +579,8 @@
     }
 
     .insignia-celebracion {
-        width: 130px;
-        height: 130px;
+        width: 115px;
+        height: 115px;
         object-fit: contain;
         position: relative;
         z-index: 1;
@@ -551,39 +601,42 @@
 
     .celebracion-etiqueta {
         font-family: "Cinzel", serif;
-        font-size: 1.35rem;
+        font-size: 1.2rem;
         font-weight: 700;
         letter-spacing: 2px;
         background: linear-gradient(
             135deg,
-            var(--gold-bright),
-            var(--gold-mid)
+            var(--gold-bright, #F2C94C),
+            var(--gold-mid, #D4A017)
         );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         animation: fadeup 0.5s 0.4s both;
+        margin: 0;
     }
     .celebracion-nombre {
-        font-size: 1.1rem;
-        color: var(--text-primary);
+        font-size: 1rem;
+        color: var(--text-primary, #F5E6C8);
         font-weight: 500;
         animation: fadeup 0.5s 0.5s both;
+        margin: 0;
     }
     .celebracion-contador {
-        font-size: 0.9rem;
-        color: var(--text-muted);
+        font-size: 0.88rem;
+        color: var(--text-muted, #A08060);
         animation: fadeup 0.5s 0.6s both;
+        margin: 0;
     }
     .celebracion-contador strong {
-        color: var(--gold-bright);
+        color: var(--gold-bright, #F2C94C);
     }
     .celebracion-acciones {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
         justify-content: center;
-        margin-top: 8px;
+        margin-top: 6px;
         animation: fadeup 0.5s 0.7s both;
     }
 
@@ -598,34 +651,32 @@
         }
     }
 
-    /* ─── Fallida ───────────────────────────────────────────────────── */
-    .fallida-card {
-        margin: 24px 20px;
-        padding: 28px 20px;
-        background: var(--bg-card);
+    /* ─── Fallida ───────────────────────────────────────────────── */
+    .vista-fallida {
+        padding: 20px;
+        background: var(--bg-card, #1E1008);
         border: 1px solid rgba(224, 82, 82, 0.25);
-        border-radius: var(--radius-md);
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        border-radius: var(--radius-md, 14px);
         gap: 10px;
     }
     .fallida-icon {
         font-size: 2.5rem;
+        margin: 0;
     }
-    .fallida-card h2 {
+    .vista-fallida h2 {
         font-family: "Cinzel", serif;
-        font-size: 1.2rem;
-        color: var(--text-primary);
+        font-size: 1.1rem;
+        color: var(--text-primary, #F5E6C8);
+        margin: 0;
     }
-    .fallida-card p {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        line-height: 1.6;
+    .vista-fallida p {
+        font-size: 0.88rem;
+        color: var(--text-muted, #A08060);
+        line-height: 1.55;
+        margin: 0;
     }
 
-    /* ─── Botones globales usados aquí ─────────────────────────────── */
+    /* ─── Botones ────────────────────────────────────────────────── */
     .btn-gold {
         display: inline-flex;
         align-items: center;
@@ -633,16 +684,16 @@
         gap: 8px;
         background: linear-gradient(
             135deg,
-            var(--gold-mid),
-            var(--gold-bright)
+            var(--gold-mid, #D4A017),
+            var(--gold-bright, #F2C94C)
         );
-        color: var(--bg-primary);
+        color: var(--bg-primary, #12090A);
         border: none;
         border-radius: var(--radius-full, 9999px);
-        padding: 13px 30px;
+        padding: 12px 26px;
         font-family: "Inter", sans-serif;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         cursor: pointer;
         text-decoration: none;
         transition: all 0.2s;
@@ -658,38 +709,60 @@
         align-items: center;
         justify-content: center;
         background: transparent;
-        color: var(--gold-mid, #d4a017);
+        color: var(--gold-mid, #D4A017);
         border: 1px solid rgba(212, 160, 23, 0.3);
-        border-radius: 9999px;
-        padding: 11px 24px;
+        border-radius: var(--radius-full, 9999px);
+        padding: 10px 20px;
         font-family: "Inter", sans-serif;
         font-weight: 500;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         cursor: pointer;
         text-decoration: none;
         transition: all 0.2s;
     }
     .btn-outline:hover {
         background: rgba(212, 160, 23, 0.1);
-        border-color: var(--gold-bright, #f2c94c);
-        color: var(--gold-bright, #f2c94c);
+        border-color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #F2C94C);
     }
 
-    /* ─── Iconos vectoriales de época para botones ─────────────────── */
     .btn-icono {
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
         flex-shrink: 0;
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .btn-gold .btn-icono {
-        color: var(--bg-primary, #12090a);
-    }
-    .btn-outline .btn-icono {
-        color: var(--gold-mid, #d4a017);
-    }
-    .btn-gold:hover .btn-icono,
-    .btn-outline:hover .btn-icono {
-        transform: scale(1.15);
+
+    /* ─── Responsive: pantallas de baja altura ───────────────────── */
+    @media (max-height: 620px) {
+        .punto-header {
+            padding-bottom: 8px;
+        }
+        .miniatura {
+            width: 46px;
+            height: 46px;
+        }
+        .header-titulo {
+            font-size: 0.98rem;
+        }
+        .header-desc {
+            -webkit-line-clamp: 1;
+        }
+        .badge-wrapper {
+            width: 100px;
+            height: 100px;
+        }
+        .insignia-celebracion {
+            width: 85px;
+            height: 85px;
+        }
+        .aura {
+            inset: -10px;
+        }
+        .aura--lenta {
+            inset: -18px;
+        }
+        .celebracion-etiqueta {
+            font-size: 1rem;
+        }
     }
 </style>

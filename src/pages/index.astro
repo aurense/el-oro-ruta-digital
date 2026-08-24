@@ -1,15 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import RutaMapa from "../components/RutaMapa.svelte";
-import StampCollection from "../components/StampCollection.svelte";
-import DonationButton from "../components/DonationButton.astro";
+import PasaporteApp from "../components/PasaporteApp.svelte";
 import { puntos } from "../data/puntos";
 ---
 
 <BaseLayout>
-	<main>
-		<RutaMapa {puntos} client:load />
-		<StampCollection {puntos} client:load />
-		<DonationButton />
-	</main>
+	<PasaporteApp {puntos} client:load />
 </BaseLayout>

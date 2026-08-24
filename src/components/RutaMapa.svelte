@@ -376,8 +376,13 @@
     /* ─── Sección contenedora ────────────────────────────────────────── */
     .ruta-mapa {
         max-width: 520px;
-        margin: 16px auto 0;
-        padding: 0 16px;
+        margin: 0 auto;
+        padding: 0 16px 16px;
+        height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
     }
 
     /* ─── Encabezado ─────────────────────────────────────────────────── */
