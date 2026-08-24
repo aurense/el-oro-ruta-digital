@@ -4,6 +4,8 @@
 
     export let audioURL: string;
     export let duracion: number = 0;
+    /** Permite cerrar el reproductor (por ejemplo si ya tiene el sello o ya lo escuchó) */
+    export let permitirCerrar: boolean = false;
 
     const dispatch = createEventDispatcher();
 
@@ -35,7 +37,6 @@
             currentTime = audio.currentTime;
             duration = audio.duration || duracion;
             progress = (currentTime / duration) * 100;
-            // Solo actualiza estado; el dispatch lo maneja onAudioEnded
             if (audio.ended && !ended) {
                 ended = true;
                 playing = false;
@@ -43,7 +44,7 @@
         }
     }
 
-    /** Llamado por el evento nativo 'ended' del <audio> — más fiable que pollear en timeupdate */
+    /** Llamado por el evento nativo 'ended' del <audio> */
     function onAudioEnded() {
         ended = true;
         playing = false;
@@ -73,6 +74,14 @@
         }
     }
 
+    function cerrar() {
+        if (audio) {
+            audio.pause();
+            playing = false;
+        }
+        dispatch("cerrar");
+    }
+
     function handleSeeking() {
         if (audio && !ended) {
             audio.currentTime = currentTime;
@@ -89,24 +98,33 @@
 </script>
 
 <div class="audio-player">
-    <!-- Indicador de estado -->
-    <p class="instruccion">
+    {#if permitirCerrar || ended}
+        <button
+            class="btn-cerrar"
+            on:click={cerrar}
+            aria-label="Cerrar reproductor"
+        >✕</button>
+    {/if}
+
+    <!-- Píldora de estado gamificada -->
+    <div class="instruccion-pill" class:completado={ended}>
         {#if ended}
-            ✅ Historia completada
+            <span class="pill-icono">✅</span>
+            <span class="pill-texto">Historia completada</span>
         {:else}
-            🎧 Escucha la historia completa para continuar con la experiencia
+            <span class="pill-icono">🎧</span>
+            <span class="pill-texto">Escucha para desbloquear la trivia</span>
         {/if}
-    </p>
+    </div>
 
     <!-- Visualizador de onda sonora -->
     <div class="wave-container" aria-hidden="true">
-        {#each [1, 2, 3, 4, 5, 6, 7] as i}
-            <span class="wave-bar" class:active={playing} style="--i:{i}"
-            ></span>
+        {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as i}
+            <span class="wave-bar" class:active={playing} style="--i:{i}"></span>
         {/each}
     </div>
 
-    <!-- Botón play principal con texto descriptivo -->
+    <!-- Botón play principal -->
     <button
         class="play-btn"
         class:playing
@@ -140,41 +158,42 @@
         </span>
     </button>
 
-    <!-- Barra de progreso -->
-    <div
-        class="progress-track"
-        role="progressbar"
-        aria-valuenow={Math.round(progress)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label="Progreso del audio"
-    >
-        <div class="progress-fill" style="width: {progress}%"></div>
-    </div>
-
-    <!-- Tiempo + chips de velocidad -->
-    <div class="time-speed-row">
-        <div class="time-display">
-            <span class="time-current">{formatTime(currentTime)}</span>
-            <span class="time-sep">/</span>
-            <span class="time-total">{formatTime(duration || duracion)}</span>
+    <!-- Barra de progreso + Tiempos + Velocidades -->
+    <div class="controls-bottom">
+        <div
+            class="progress-track"
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso del audio"
+        >
+            <div class="progress-fill" style="width: {progress}%"></div>
         </div>
 
-        <div
-            role="group"
-            aria-label="Velocidad de reproducción"
-            class="speed-group"
-        >
-            {#each velocidades as v}
-                <button
-                    class="speed-chip"
-                    class:activo={velocidadActual === v}
-                    on:click={() => setVelocidad(v)}
-                    aria-pressed={velocidadActual === v}
-                    aria-label="{v}x velocidad"
-                    >{v === 1 ? "1×" : `${v}×`}</button
-                >
-            {/each}
+        <div class="time-speed-row">
+            <div class="time-display">
+                <span class="time-current">{formatTime(currentTime)}</span>
+                <span class="time-sep">/</span>
+                <span class="time-total">{formatTime(duration || duracion)}</span>
+            </div>
+
+            <div
+                role="group"
+                aria-label="Velocidad de reproducción"
+                class="speed-group"
+            >
+                {#each velocidades as v}
+                    <button
+                        class="speed-chip"
+                        class:activo={velocidadActual === v}
+                        on:click={() => setVelocidad(v)}
+                        aria-pressed={velocidadActual === v}
+                        aria-label="{v}x velocidad"
+                        >{v === 1 ? "1×" : `${v}×`}</button
+                    >
+                {/each}
+            </div>
         </div>
     </div>
 
@@ -199,47 +218,96 @@
 </div>
 
 <style>
-    /* ─── Contenedor ─────────────────────────────────────────────── */
+    /* ─── Contenedor Flexbox Responsivo ──────────────────────────── */
     .audio-player {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 18px;
+        justify-content: space-between;
+        gap: 12px;
         margin: 0 auto;
-        padding: 28px 24px;
-        background: var(--bg-card, #1e1008);
-        border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.25));
-        border-radius: 24px;
-        max-width: 320px;
+        padding: 20px 18px 16px;
+        background: linear-gradient(160deg, #1e1008 0%, #2a1a0a 100%);
+        border: 1px solid rgba(212, 160, 23, 0.35);
+        border-radius: 22px;
+        max-width: min(92vw, 340px);
         width: 100%;
+        max-height: min(85dvh, 360px);
+        box-sizing: border-box;
         box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(212, 160, 23, 0.06) inset;
+            0 12px 36px rgba(0, 0, 0, 0.6),
+            0 0 30px rgba(212, 160, 23, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    /* ─── Instrucción ────────────────────────────────────────────── */
-    .instruccion {
-        font-size: 0.82rem;
+    /* ─── Botón Cerrar ───────────────────────────────────────────── */
+    .btn-cerrar {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: transparent;
+        border: none;
         color: var(--text-muted, #a08060);
-        text-align: center;
-        line-height: 1.45;
-        margin: 0;
-        letter-spacing: 0.01em;
+        font-size: 0.95rem;
+        cursor: pointer;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.15s;
+        z-index: 3;
+    }
+    .btn-cerrar:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary, #f5e6c8);
     }
 
-    /* ─── Onda sonora ────────────────────────────────────────────── */
+    /* ─── Píldora de Instrucción ─────────────────────────────────── */
+    .instruccion-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        background: rgba(212, 160, 23, 0.08);
+        border: 1px solid rgba(212, 160, 23, 0.22);
+        color: var(--gold-bright, #f2c94c);
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .instruccion-pill.completado {
+        background: rgba(76, 175, 130, 0.12);
+        border-color: rgba(76, 175, 130, 0.35);
+        color: #4caf82;
+    }
+    .pill-icono {
+        font-size: 0.8rem;
+    }
+    .pill-texto {
+        line-height: 1.2;
+    }
+
+    /* ─── Onda sonora compacta ───────────────────────────────────── */
     .wave-container {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 4px;
-        height: 40px;
+        height: 28px;
+        flex-shrink: 0;
     }
     .wave-bar {
-        width: 4px;
-        height: 8px;
-        background: var(--gold-mid, #d4a017);
+        width: 3.5px;
+        height: 6px;
+        background: linear-gradient(180deg, var(--gold-bright, #f2c94c), var(--gold-mid, #d4a017));
         border-radius: 2px;
-        opacity: 0.3;
+        opacity: 0.35;
         transition:
             height 0.15s ease,
             opacity 0.15s ease;
@@ -247,16 +315,16 @@
     .wave-bar.active {
         opacity: 1;
         animation: onda 1.1s ease-in-out infinite;
-        animation-delay: calc(var(--i) * 0.11s);
+        animation-delay: calc(var(--i) * 0.09s);
     }
     @keyframes onda {
         0%,
         100% {
             height: 6px;
-            opacity: 0.6;
+            opacity: 0.5;
         }
         50% {
-            height: 32px;
+            height: 26px;
             opacity: 1;
         }
     }
@@ -271,21 +339,21 @@
         );
         color: #12090a;
         border-radius: 9999px;
-        padding: 0 28px;
-        height: 56px;
+        padding: 0 24px;
+        height: 48px;
         cursor: pointer;
-        transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         box-shadow:
-            0 4px 18px rgba(212, 160, 23, 0.45),
+            0 4px 16px rgba(212, 160, 23, 0.4),
             0 0 0 0 rgba(212, 160, 23, 0);
         flex-shrink: 0;
-        min-width: 160px;
+        min-width: 145px;
     }
     .play-btn:hover {
-        transform: translateY(-2px) scale(1.03);
+        transform: translateY(-2px) scale(1.02);
         box-shadow:
-            0 8px 28px rgba(212, 160, 23, 0.6),
-            0 0 0 6px rgba(212, 160, 23, 0.12);
+            0 6px 22px rgba(212, 160, 23, 0.55),
+            0 0 0 5px rgba(212, 160, 23, 0.12);
     }
     .play-btn:active {
         transform: scale(0.97);
@@ -297,13 +365,13 @@
         0%,
         100% {
             box-shadow:
-                0 4px 18px rgba(212, 160, 23, 0.45),
+                0 4px 16px rgba(212, 160, 23, 0.4),
                 0 0 0 0 rgba(212, 160, 23, 0.2);
         }
         50% {
             box-shadow:
-                0 4px 18px rgba(212, 160, 23, 0.45),
-                0 0 0 10px rgba(212, 160, 23, 0);
+                0 4px 16px rgba(212, 160, 23, 0.4),
+                0 0 0 8px rgba(212, 160, 23, 0);
         }
     }
 
@@ -311,27 +379,36 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 7px;
         font-family: "Inter", sans-serif;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         letter-spacing: 0.01em;
         pointer-events: none;
     }
     .play-icon {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         flex-shrink: 0;
     }
     .play-label {
         line-height: 1;
     }
 
+    /* ─── Controles inferiores ───────────────────────────────────── */
+    .controls-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
     /* ─── Barra de progreso ──────────────────────────────────────── */
     .progress-track {
         width: 100%;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.07);
+        height: 5px;
+        background: rgba(255, 255, 255, 0.08);
         border-radius: 3px;
         overflow: hidden;
     }
@@ -343,7 +420,7 @@
             var(--gold-bright, #f2c94c)
         );
         border-radius: 3px;
-        transition: width 0.4s linear;
+        transition: width 0.3s linear;
         box-shadow: 0 0 8px rgba(242, 201, 76, 0.45);
     }
 
@@ -353,13 +430,13 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        gap: 8px;
+        gap: 6px;
     }
     .time-display {
         display: flex;
         align-items: center;
         gap: 3px;
-        font-size: 0.82rem;
+        font-size: 0.76rem;
         font-variant-numeric: tabular-nums;
         font-weight: 500;
         flex-shrink: 0;
@@ -374,23 +451,23 @@
         color: var(--text-muted, #a08060);
     }
 
-    /* ─── Grupo de velocidad ─────────────────────────────────── */
+    /* ─── Grupo de velocidad ─────────────────────────────────────── */
     .speed-group {
         display: flex;
-        gap: 4px;
+        gap: 3px;
         align-items: center;
     }
     .speed-chip {
-        padding: 3px 8px;
+        padding: 2px 7px;
         border-radius: 999px;
         border: 1px solid rgba(212, 160, 23, 0.2);
         background: transparent;
         color: var(--text-dim, #6b5040);
         font-family: "Inter", sans-serif;
-        font-size: 0.68rem;
+        font-size: 0.66rem;
         font-weight: 700;
         cursor: pointer;
-        line-height: 1.5;
+        line-height: 1.4;
         transition: all 0.15s;
     }
     .speed-chip:hover:not(.activo) {
@@ -403,45 +480,17 @@
         color: var(--gold-bright, #f2c94c);
     }
 
-    /* ─── Error de carga ─────────────────────────────────────── */
+    /* ─── Error de carga ─────────────────────────────────────────── */
     .error-carga {
-        font-size: 0.78rem;
+        font-size: 0.74rem;
         color: #e07b39;
         text-align: center;
         margin: 0;
-        padding: 8px 12px;
+        padding: 6px 10px;
         background: rgba(224, 123, 57, 0.08);
         border: 1px solid rgba(224, 123, 57, 0.25);
         border-radius: 8px;
         width: 100%;
-    }
-
-    /* ─── Pantallas de baja altura ───────────────────────────────── */
-    @media (max-height: 600px) {
-        .audio-player {
-            gap: 12px;
-            padding: 18px 20px;
-        }
-        .play-btn {
-            height: 46px;
-            min-width: 130px;
-            padding: 0 20px;
-        }
-        .play-btn-inner {
-            font-size: 0.85rem;
-        }
-        .play-icon {
-            width: 16px;
-            height: 16px;
-        }
-        .wave-container {
-            height: 26px;
-        }
-        .instruccion {
-            font-size: 0.74rem;
-        }
-        .time-display {
-            font-size: 0.74rem;
-        }
+        box-sizing: border-box;
     }
 </style>

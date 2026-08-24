@@ -100,6 +100,14 @@
         }
     }
 
+    function onCerrarAudio() {
+        if (yaTieneSello) {
+            cambiarFase("selloGanado");
+        } else {
+            irAlPasaporte();
+        }
+    }
+
     function onTriviaSuccess(
         event?: CustomEvent<{
             vidasRestantes?: number;
@@ -282,7 +290,9 @@
                 <AudioPlayer
                     audioURL={punto.audioURL}
                     duracion={punto.duracion}
+                    permitirCerrar={yaTieneSello}
                     on:ended={onAudioEnded}
+                    on:cerrar={onCerrarAudio}
                 />
             </div>
 
