@@ -35,12 +35,12 @@
     ];
 
     function generarConfetti() {
-        confettiPiezas = Array.from({ length: 44 }, () => ({
+        confettiPiezas = Array.from({ length: 36 }, () => ({
             x: Math.random() * 100,
             color: colores[Math.floor(Math.random() * colores.length)],
-            delay: Math.random() * 0.7,
-            duration: 1.4 + Math.random() * 1.2,
-            size: 5 + Math.random() * 7,
+            delay: Math.random() * 0.6,
+            duration: 1.2 + Math.random() * 1.0,
+            size: 4 + Math.random() * 6,
             shape: Math.random() > 0.5 ? "50%" : "2px",
         }));
     }
@@ -49,7 +49,7 @@
         if (!fecha) return "";
         return new Intl.DateTimeFormat("es-MX", {
             day: "numeric",
-            month: "long",
+            month: "short",
             year: "numeric",
         }).format(new Date(fecha));
     }
@@ -100,14 +100,14 @@
         {/each}
     </div>
 
-    <!-- Panel central -->
+    <!-- Panel central con Flexbox -->
     <div class="modal-panel">
         <!-- Botón cerrar -->
         <button class="btn-cerrar" on:click={cerrar} aria-label="Cerrar"
             >✕</button
         >
 
-        <!-- Badge con aura -->
+        <!-- Badge con aura elástica -->
         <div class="badge-wrapper">
             <div class="aura" aria-hidden="true"></div>
             <div class="aura aura--lenta" aria-hidden="true"></div>
@@ -118,42 +118,44 @@
             />
         </div>
 
-        <!-- Textos de celebración -->
-        <p class="etiqueta-titulo">¡SELLO DESBLOQUEADO!</p>
-        <h2 class="nombre-punto">{punto.nombre}</h2>
+        <!-- Textos de celebración compactos -->
+        <div class="modal-info">
+            <p class="etiqueta-titulo">¡SELLO DESBLOQUEADO!</p>
+            <h2 class="nombre-punto">{punto.nombre}</h2>
 
-        {#if fechaObtenida}
-            <p class="fecha">
-                Obtenido el {formatearFecha(fechaObtenida)}
-            </p>
-        {/if}
-
-        <p class="progreso">
-            Tu pasaporte:
-            <strong class="progreso-num">{totalSellos}</strong>
-            de
-            <strong>{totalPuntos}</strong>
-            sellos
-        </p>
+            <div class="meta-row">
+                {#if fechaObtenida}
+                    <span class="meta-item">
+                        📅 {formatearFecha(fechaObtenida)}
+                    </span>
+                    <span class="meta-sep" aria-hidden="true">•</span>
+                {/if}
+                <span class="meta-item">
+                    Pasaporte: <strong class="progreso-num">{totalSellos}/{totalPuntos}</strong>
+                </span>
+            </div>
+        </div>
 
         <!-- Voucher del aliado vinculado (si existe) -->
         {#if aliado}
             <VoucherCard {aliado} tipo="modal" />
         {/if}
 
-        <!-- Acciones -->
+        <!-- Acciones en fila horizontal -->
         <div class="acciones">
             <button class="btn-historia" on:click={irAlPunto}>
-                ▶ Visitar nuevamente
+                ▶ Visitar
             </button>
-            <button class="btn-secundario" on:click={cerrar}> Cerrar </button>
+            <button class="btn-secundario" on:click={cerrar}>
+                Cerrar
+            </button>
         </div>
     </div>
 </div>
 {/if}
 
 <style>
-    /* ─── Overlay para producción y móviles ──────────────────────── */
+    /* ─── Overlay Flexbox ────────────────────────────────────────── */
     .modal-sello-overlay {
         position: fixed;
         inset: 0;
@@ -164,8 +166,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
+        padding: 12px;
         box-sizing: border-box;
+        overflow-y: auto;
     }
 
     /* ─── Confetti ───────────────────────────────────────────────── */
@@ -197,62 +200,76 @@
         }
     }
 
-    /* ─── Panel central ──────────────────────────────────────────── */
+    /* ─── Panel central Flexbox ──────────────────────────────────── */
     .modal-panel {
         position: relative;
         z-index: 2;
         background: linear-gradient(160deg, #1e1008 0%, #2a1a0a 100%);
         border: 1px solid rgba(212, 160, 23, 0.45);
-        border-radius: 24px;
-        padding: 32px 24px 28px;
+        border-radius: 20px;
+        padding: 20px 16px 14px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
+        gap: 8px;
+        max-width: min(92vw, 350px);
+        width: 100%;
+        max-height: min(92dvh, 520px);
         box-shadow:
             0 0 0 1px rgba(212, 160, 23, 0.08),
-            0 24px 60px rgba(0, 0, 0, 0.7),
-            0 0 60px rgba(212, 160, 23, 0.08);
+            0 24px 60px rgba(0, 0, 0, 0.75),
+            0 0 50px rgba(212, 160, 23, 0.1);
         text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+        /* Ocultar scrollbar */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .modal-panel::-webkit-scrollbar {
+        display: none;
     }
 
     /* ─── Botón cerrar ───────────────────────────────────────────── */
     .btn-cerrar {
         position: absolute;
-        top: 14px;
-        right: 16px;
+        top: 10px;
+        right: 12px;
         background: transparent;
         border: none;
         color: var(--text-muted, #a08060);
-        font-size: 1rem;
+        font-size: 0.95rem;
         cursor: pointer;
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 50%;
         transition: all 0.15s;
+        z-index: 3;
     }
     .btn-cerrar:hover {
         background: rgba(255, 255, 255, 0.06);
         color: var(--text-primary, #f5e6c8);
     }
 
-    /* ─── Badge con aura ─────────────────────────────────────────── */
+    /* ─── Badge con aura elástica ────────────────────────────────── */
     .badge-wrapper {
         position: relative;
-        width: 140px;
-        height: 140px;
+        width: min(96px, 16vh);
+        height: min(96px, 16vh);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 4px;
+        flex-shrink: 0;
+        margin-bottom: 2px;
     }
 
     .aura {
         position: absolute;
-        inset: -14px;
+        inset: -8px;
         border-radius: 50%;
         background: conic-gradient(
             transparent 20%,
@@ -263,7 +280,7 @@
         animation: girar-aura 3s linear infinite;
     }
     .aura--lenta {
-        inset: -26px;
+        inset: -14px;
         background: conic-gradient(
             transparent 40%,
             rgba(242, 201, 76, 0.2) 60%,
@@ -278,14 +295,14 @@
     }
 
     .insignia {
-        width: 115px;
-        height: 115px;
+        width: min(80px, 13vh);
+        height: min(80px, 13vh);
         object-fit: contain;
         position: relative;
         z-index: 1;
         animation: revelar-insignia 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         animation-delay: 0.1s;
-        filter: drop-shadow(0 0 18px rgba(242, 201, 76, 0.55));
+        filter: drop-shadow(0 0 14px rgba(242, 201, 76, 0.55));
     }
     @keyframes revelar-insignia {
         from {
@@ -298,12 +315,21 @@
         }
     }
 
-    /* ─── Textos ─────────────────────────────────────────────────── */
+    /* ─── Textos de información ──────────────────────────────────── */
+    .modal-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        flex-shrink: 0;
+        width: 100%;
+    }
+
     .etiqueta-titulo {
         font-family: "Cinzel", serif;
-        font-size: 1.2rem;
+        font-size: 0.9rem;
         font-weight: 700;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         background: linear-gradient(
             135deg,
             var(--gold-bright, #f2c94c),
@@ -313,29 +339,35 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin: 0;
-        animation: fadeup 0.4s 0.3s both;
+        animation: fadeup 0.4s 0.2s both;
     }
 
     .nombre-punto {
-        font-size: 1rem;
-        font-weight: 500;
+        font-family: "Cinzel", serif;
+        font-size: 0.95rem;
+        font-weight: 700;
         color: var(--text-primary, #f5e6c8);
         margin: 0;
-        animation: fadeup 0.4s 0.4s both;
+        line-height: 1.2;
+        animation: fadeup 0.4s 0.3s both;
     }
 
-    .fecha {
-        font-size: 0.78rem;
-        color: var(--text-muted, #a08060);
-        margin: 0;
-        animation: fadeup 0.4s 0.45s both;
+    .meta-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 1px;
+        animation: fadeup 0.4s 0.35s both;
     }
-
-    .progreso {
-        font-size: 0.82rem;
+    .meta-item {
+        font-size: 0.72rem;
         color: var(--text-muted, #a08060);
-        margin: 0;
-        animation: fadeup 0.4s 0.5s both;
+    }
+    .meta-sep {
+        font-size: 0.7rem;
+        color: rgba(212, 160, 23, 0.4);
     }
     .progreso-num {
         color: var(--gold-bright, #f2c94c);
@@ -344,7 +376,7 @@
     @keyframes fadeup {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
         }
         to {
             opacity: 1;
@@ -352,19 +384,20 @@
         }
     }
 
-    /* ─── Acciones ───────────────────────────────────────────────── */
+    /* ─── Acciones en fila horizontal ────────────────────────────── */
     .acciones {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 8px;
         width: 100%;
-        margin-top: 6px;
-        animation: fadeup 0.4s 0.55s both;
+        flex-shrink: 0;
+        margin-top: 4px;
+        animation: fadeup 0.4s 0.4s both;
     }
 
     .btn-historia {
-        width: 100%;
-        padding: 13px;
+        flex: 1.2;
+        padding: 9px 12px;
         border-radius: 999px;
         border: none;
         background: linear-gradient(
@@ -375,30 +408,32 @@
         color: #12090a;
         font-family: "Inter", sans-serif;
         font-weight: 700;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: 0 4px 16px rgba(212, 160, 23, 0.35);
+        box-shadow: 0 4px 14px rgba(212, 160, 23, 0.35);
+        white-space: nowrap;
     }
     .btn-historia:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 24px rgba(212, 160, 23, 0.5);
+        box-shadow: 0 6px 20px rgba(212, 160, 23, 0.45);
     }
     .btn-historia:active {
         transform: translateY(0);
     }
 
     .btn-secundario {
-        width: 100%;
-        padding: 10px;
+        flex: 0.8;
+        padding: 9px 12px;
         border-radius: 999px;
         border: 1px solid rgba(212, 160, 23, 0.25);
         background: transparent;
         color: var(--text-muted, #a08060);
         font-family: "Inter", sans-serif;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s;
+        white-space: nowrap;
     }
     .btn-secundario:hover {
         color: var(--text-primary, #f5e6c8);

@@ -245,5 +245,29 @@
     .voucher-modal {
         max-width: 100%;
         border-radius: 12px;
+        flex-shrink: 0;
+    }
+    .voucher-modal .voucher-head {
+        padding: 6px 12px 5px;
+    }
+    .voucher-modal .voucher-cuerpo {
+        padding: 6px 12px;
+        gap: 2px;
+    }
+    .voucher-modal .voucher-aliado {
+        font-size: 0.78rem;
+    }
+    .voucher-modal .voucher-detalle {
+        font-size: 0.74rem;
+        line-height: 1.35;
+    }
+    .voucher-modal .voucher-pie {
+        padding: 5px 12px 6px;
+    }
+    .voucher-modal .voucher-vigencia {
+        font-size: 0.66rem;
+    }
+    .voucher-modal .voucher-cta {
+        font-size: 0.7rem;
     }
 </style>
