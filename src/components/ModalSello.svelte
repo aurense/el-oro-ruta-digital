@@ -75,9 +75,12 @@
 
 {#if visible && punto}
 <!-- Contenedor overlay para producción/móviles -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     class="modal-sello-overlay"
     role="dialog"
+    tabindex="-1"
     aria-modal="true"
     on:click|self={cerrar}
     aria-label="Sello desbloqueado: {punto.nombre}"

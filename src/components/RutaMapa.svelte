@@ -3,6 +3,7 @@
     import type { PuntoData } from "../data/puntos";
     import { aliados } from "../data/aliados";
     import ModalSello from "./ModalSello.svelte";
+    import CertificadoHonor from "./CertificadoHonor.svelte";
 
     export let puntos: PuntoData[];
 
@@ -47,31 +48,51 @@
 </script>
 
 <section class="ruta-mapa" aria-label="Mapa de ruta de exploración">
-
     <!-- ─── Encabezado ──────────────────────────────────────────────────── -->
     <header class="mapa-header">
         <div class="mapa-titulo-wrap">
-            <svg class="mapa-titulo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                <line x1="8" y1="2" x2="8" y2="18"/>
-                <line x1="16" y1="6" x2="16" y2="22"/>
+            <svg
+                class="mapa-titulo-icono"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+            >
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
             </svg>
-            <h2 class="mapa-titulo">Ruta Cultural</h2>
+            <h2 class="mapa-titulo">Ruta Patrimonial</h2>
         </div>
         <p class="mapa-contador">
             {#if obtenidos === total && total > 0}
                 <span class="cnt-completada">
-                    <svg class="cnt-trofeo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/>
-                        <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/>
-                        <path d="M4 22h16"/>
-                        <path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h10c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-2c-.55 0-1-.45-1-1v-2.34"/>
-                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                    <svg
+                        class="cnt-trofeo-icono"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
+                        <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
+                        <path d="M4 22h16" />
+                        <path
+                            d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h10c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-2c-.55 0-1-.45-1-1v-2.34"
+                        />
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
                     </svg>
                     <span>¡Ruta completada!</span>
                 </span>
             {:else}
-                <span class="cnt-num">{obtenidos}</span> de <span class="cnt-total">{total}</span> puntos visitados
+                <span class="cnt-num">{obtenidos}</span> de
+                <span class="cnt-total">{total}</span> puntos visitados
             {/if}
         </p>
     </header>
@@ -86,61 +107,215 @@
         >
             <defs>
                 <!-- Filtro de glow dorado para marcadores visitados -->
-                <filter id="glow-dorado" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                <filter
+                    id="glow-dorado"
+                    x="-50%"
+                    y="-50%"
+                    width="200%"
+                    height="200%"
+                >
+                    <feGaussianBlur stdDeviation="3" result="blur" />
                     <feMerge>
-                        <feMergeNode in="blur"/>
-                        <feMergeNode in="SourceGraphic"/>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
                 <!-- Gradiente de fondo sutil -->
                 <radialGradient id="bg-grad" cx="55%" cy="70%" r="60%">
-                    <stop offset="0%"   stop-color="#2C1A0E" stop-opacity="1"/>
-                    <stop offset="100%" stop-color="#12090A" stop-opacity="1"/>
+                    <stop offset="0%" stop-color="#2C1A0E" stop-opacity="1" />
+                    <stop offset="100%" stop-color="#12090A" stop-opacity="1" />
                 </radialGradient>
                 <!-- Patrón de puntos sutil -->
-                <pattern id="dot-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <circle cx="10" cy="10" r="0.8" fill="rgba(212,160,23,0.08)"/>
+                <pattern
+                    id="dot-pattern"
+                    x="0"
+                    y="0"
+                    width="20"
+                    height="20"
+                    patternUnits="userSpaceOnUse"
+                >
+                    <circle
+                        cx="10"
+                        cy="10"
+                        r="0.8"
+                        fill="rgba(212,160,23,0.08)"
+                    />
                 </pattern>
             </defs>
 
             <!-- ─ Fondo ─────────────────────────────────────────────── -->
-            <rect width="400" height="300" fill="url(#bg-grad)"/>
-            <rect width="400" height="300" fill="url(#dot-pattern)"/>
+            <rect width="400" height="300" fill="url(#bg-grad)" />
+            <rect width="400" height="300" fill="url(#dot-pattern)" />
 
             <!-- ─ Calles abstractas ──────────────────────────────────── -->
             <!-- Calle principal horizontal (Av. Constitución) -->
-            <line x1="0"   y1="222" x2="400" y2="222" stroke="#1A0D07" stroke-width="14"/>
-            <line x1="0"   y1="222" x2="400" y2="222" stroke="rgba(212,160,23,0.06)" stroke-width="1" stroke-dasharray="4 8"/>
+            <line
+                x1="0"
+                y1="222"
+                x2="400"
+                y2="222"
+                stroke="#1A0D07"
+                stroke-width="14"
+            />
+            <line
+                x1="0"
+                y1="222"
+                x2="400"
+                y2="222"
+                stroke="rgba(212,160,23,0.06)"
+                stroke-width="1"
+                stroke-dasharray="4 8"
+            />
             <!-- Calle vertical central -->
-            <line x1="200" y1="0"   x2="200" y2="300" stroke="#1A0D07" stroke-width="11"/>
-            <line x1="200" y1="0"   x2="200" y2="300" stroke="rgba(212,160,23,0.06)" stroke-width="1" stroke-dasharray="4 8"/>
+            <line
+                x1="200"
+                y1="0"
+                x2="200"
+                y2="300"
+                stroke="#1A0D07"
+                stroke-width="11"
+            />
+            <line
+                x1="200"
+                y1="0"
+                x2="200"
+                y2="300"
+                stroke="rgba(212,160,23,0.06)"
+                stroke-width="1"
+                stroke-dasharray="4 8"
+            />
             <!-- Calle horizontal media (Benito Juárez) -->
-            <line x1="0"   y1="157" x2="330" y2="157" stroke="#1A0D07" stroke-width="9"/>
-            <line x1="0"   y1="157" x2="330" y2="157" stroke="rgba(212,160,23,0.05)" stroke-width="1" stroke-dasharray="4 8"/>
+            <line
+                x1="0"
+                y1="157"
+                x2="330"
+                y2="157"
+                stroke="#1A0D07"
+                stroke-width="9"
+            />
+            <line
+                x1="0"
+                y1="157"
+                x2="330"
+                y2="157"
+                stroke="rgba(212,160,23,0.05)"
+                stroke-width="1"
+                stroke-dasharray="4 8"
+            />
             <!-- Calle hacia el Tiro Norte -->
-            <line x1="270" y1="0"   x2="270" y2="157" stroke="#1A0D07" stroke-width="8"/>
+            <line
+                x1="270"
+                y1="0"
+                x2="270"
+                y2="157"
+                stroke="#1A0D07"
+                stroke-width="8"
+            />
 
             <!-- ─ Manzanas (bloques de edificios abstractos) ──────────── -->
-            <rect x="8"   y="8"   width="80"  height="52" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="218" y="8"   width="55"  height="42" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="8"   y="168" width="55"  height="44" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="218" y="168" width="45"  height="44" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="320" y="168" width="72"  height="44" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="290" y="8"   width="50"  height="40" rx="3" fill="#1C0E07" opacity="0.9"/>
-            <rect x="8"   y="230" width="90"  height="60" rx="3" fill="#1C0E07" opacity="0.8"/>
-            <rect x="320" y="230" width="72"  height="60" rx="3" fill="#1C0E07" opacity="0.8"/>
+            <rect
+                x="8"
+                y="8"
+                width="80"
+                height="52"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="218"
+                y="8"
+                width="55"
+                height="42"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="8"
+                y="168"
+                width="55"
+                height="44"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="218"
+                y="168"
+                width="45"
+                height="44"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="320"
+                y="168"
+                width="72"
+                height="44"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="290"
+                y="8"
+                width="50"
+                height="40"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.9"
+            />
+            <rect
+                x="8"
+                y="230"
+                width="90"
+                height="60"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.8"
+            />
+            <rect
+                x="320"
+                y="230"
+                width="72"
+                height="60"
+                rx="3"
+                fill="#1C0E07"
+                opacity="0.8"
+            />
 
             <!-- ─ Plaza central ──────────────────────────────────────── -->
-            <rect x="155" y="168" width="52" height="42" rx="4"
-                  fill="#1E1008" stroke="rgba(212,160,23,0.45)" stroke-width="1"/>
+            <rect
+                x="155"
+                y="168"
+                width="52"
+                height="42"
+                rx="4"
+                fill="#1E1008"
+                stroke="rgba(212,160,23,0.45)"
+                stroke-width="1"
+            />
             <!-- Fuente central de la plaza -->
-            <circle cx="181" cy="189" r="6" fill="none"
-                    stroke="rgba(212,160,23,0.3)" stroke-width="1"/>
-            <circle cx="181" cy="189" r="2" fill="rgba(212,160,23,0.2)"/>
+            <circle
+                cx="181"
+                cy="189"
+                r="6"
+                fill="none"
+                stroke="rgba(212,160,23,0.3)"
+                stroke-width="1"
+            />
+            <circle cx="181" cy="189" r="2" fill="rgba(212,160,23,0.2)" />
 
             <!-- ─ Etiqueta de orientación ────────────────────────────── -->
-            <text x="22" y="18" font-size="7" fill="rgba(212,160,23,0.3)" font-family="Inter,sans-serif">N ↑</text>
+            <text
+                x="22"
+                y="18"
+                font-size="7"
+                fill="rgba(212,160,23,0.3)"
+                font-family="Inter,sans-serif">N ↑</text
+            >
 
             <!-- ═══════════════════════════════════════════════════════ -->
             <!-- ─ RUTAS ENTRE PUNTOS (escalable: itera pares) ──────── -->
@@ -152,9 +327,13 @@
 
                     <!-- Ruta base (animada con sendero de exploración hacia puntos pendientes) -->
                     <line
-                        x1={punto.mapa.x} y1={punto.mapa.y}
-                        x2={siguiente.mapa.x} y2={siguiente.mapa.y}
-                        stroke={activa ? "rgba(120,80,40,0.35)" : "rgba(200,138,88,0.45)"}
+                        x1={punto.mapa.x}
+                        y1={punto.mapa.y}
+                        x2={siguiente.mapa.x}
+                        y2={siguiente.mapa.y}
+                        stroke={activa
+                            ? "rgba(120,80,40,0.35)"
+                            : "rgba(200,138,88,0.45)"}
                         stroke-width={activa ? "2" : "2.2"}
                         stroke-dasharray="5 5"
                         stroke-linecap="round"
@@ -163,15 +342,18 @@
                         tabindex="0"
                         aria-label="Sendero hacia {siguiente.nombre}"
                         on:click={() => handleMarcadorClick(siguiente)}
-                        on:keydown={(e) => e.key === 'Enter' && handleMarcadorClick(siguiente)}
+                        on:keydown={(e) =>
+                            e.key === "Enter" && handleMarcadorClick(siguiente)}
                         style:cursor="pointer"
                     />
 
                     <!-- Ruta activa dorada animada -->
                     {#if activa}
                         <line
-                            x1={punto.mapa.x} y1={punto.mapa.y}
-                            x2={siguiente.mapa.x} y2={siguiente.mapa.y}
+                            x1={punto.mapa.x}
+                            y1={punto.mapa.y}
+                            x2={siguiente.mapa.x}
+                            y2={siguiente.mapa.y}
                             stroke="#D4A017"
                             stroke-width="2.5"
                             stroke-dasharray="6 6"
@@ -220,16 +402,23 @@
                     cy={punto.mapa.y}
                     r="13"
                     fill={visitado ? "#2A1A08" : "#1A0D05"}
-                    stroke={seleccionado ? "#F2C94C" : visitado ? "#D4A017" : "rgba(100,70,40,0.6)"}
+                    stroke={seleccionado
+                        ? "#F2C94C"
+                        : visitado
+                          ? "#D4A017"
+                          : "rgba(100,70,40,0.6)"}
                     stroke-width={seleccionado ? "2.5" : visitado ? "2" : "1.5"}
                     class="marcador"
                     style="--orden: {i}"
                     filter={visitado ? "url(#glow-dorado)" : "none"}
                     role="button"
                     tabindex="0"
-                    aria-label="{visitado ? 'Visitado: ' : 'No visitado: '}{punto.nombre}"
+                    aria-label="{visitado
+                        ? 'Visitado: '
+                        : 'No visitado: '}{punto.nombre}"
                     on:click={() => handleMarcadorClick(punto)}
-                    on:keydown={(e) => e.key === 'Enter' && handleMarcadorClick(punto)}
+                    on:keydown={(e) =>
+                        e.key === "Enter" && handleMarcadorClick(punto)}
                     style:cursor="pointer"
                 />
 
@@ -244,35 +433,97 @@
                     fill={visitado ? "#F2C94C" : "rgba(160,128,96,0.7)"}
                     class="marcador-num"
                     style="--orden: {i}"
-                    pointer-events="none"
-                >{i + 1}</text>
+                    pointer-events="none">{i + 1}</text
+                >
 
                 <!-- Icono vectorial de época del punto (encima del número) -->
                 <g
-                    transform="translate({punto.mapa.x - 7}, {punto.mapa.y - 27}) scale(0.6)"
+                    transform="translate({punto.mapa.x - 7}, {punto.mapa.y -
+                        27}) scale(0.6)"
                     class="marcador-icono-svg"
                     opacity={visitado ? "1" : "0.45"}
                     color={visitado ? "#F2C94C" : "#A08060"}
                     pointer-events="none"
                 >
-                    {#if punto.id === 'palacio-municipal'}
+                    {#if punto.id === "palacio-municipal"}
                         <!-- Palacio Municipal Neoclásico & Art Nouveau -->
                         <path d="M2 9L12 3L22 9H2Z" fill="currentColor" />
-                        <circle cx="12" cy="6.6" r="1.2" fill="#1E1008" stroke="currentColor" stroke-width="0.6"/>
-                        <path d="M4 10V17M9 10V17M15 10V17M20 10V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                        <path d="M2 18H22M1 20.5H23" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                    {:else if punto.id === 'teatro-juarez'}
+                        <circle
+                            cx="12"
+                            cy="6.6"
+                            r="1.2"
+                            fill="#1E1008"
+                            stroke="currentColor"
+                            stroke-width="0.6"
+                        />
+                        <path
+                            d="M4 10V17M9 10V17M15 10V17M20 10V17"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M2 18H22M1 20.5H23"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+                    {:else if punto.id === "teatro-juarez"}
                         <!-- Teatro Juárez - Máscaras clásicas de época -->
-                        <path d="M3 13C3 8 7 4 12 4C17 4 21 8 21 13C21 17.5 18 20.5 12 20.5C6 20.5 3 17.5 3 13Z" fill="none" stroke="currentColor" stroke-width="1.6"/>
-                        <ellipse cx="8.5" cy="11.5" rx="1.8" ry="1.2" fill="currentColor"/>
-                        <ellipse cx="15.5" cy="11.5" rx="1.8" ry="1.2" fill="currentColor"/>
-                        <path d="M8 15.5C9.5 17.5 14.5 17.5 16 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-                    {:else if punto.id === 'tiro-norte'}
+                        <path
+                            d="M3 13C3 8 7 4 12 4C17 4 21 8 21 13C21 17.5 18 20.5 12 20.5C6 20.5 3 17.5 3 13Z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                        />
+                        <ellipse
+                            cx="8.5"
+                            cy="11.5"
+                            rx="1.8"
+                            ry="1.2"
+                            fill="currentColor"
+                        />
+                        <ellipse
+                            cx="15.5"
+                            cy="11.5"
+                            rx="1.8"
+                            ry="1.2"
+                            fill="currentColor"
+                        />
+                        <path
+                            d="M8 15.5C9.5 17.5 14.5 17.5 16 15.5"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                            stroke-linecap="round"
+                            fill="none"
+                        />
+                    {:else if punto.id === "tiro-norte"}
                         <!-- Tiro Norte - Castillete minero y polea de extracción -->
-                        <circle cx="12" cy="4" r="2.4" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                        <path d="M6 21L9.5 6H14.5L18 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                        <path d="M8 13.5H16M6.8 17.5H17.2" stroke="currentColor" stroke-width="1.3"/>
-                        <path d="M12 4L19 21" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.5 1"/>
+                        <circle
+                            cx="12"
+                            cy="4"
+                            r="2.4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                        />
+                        <path
+                            d="M6 21L9.5 6H14.5L18 21"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M8 13.5H16M6.8 17.5H17.2"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                        />
+                        <path
+                            d="M12 4L19 21"
+                            stroke="currentColor"
+                            stroke-width="1.2"
+                            stroke-dasharray="1.5 1"
+                        />
                     {/if}
                 </g>
 
@@ -284,21 +535,45 @@
                     font-size="7.5"
                     font-family="Inter, sans-serif"
                     font-weight={visitado ? "600" : "400"}
-                    fill={visitado ? "rgba(245,200,122,0.9)" : "rgba(160,128,96,0.5)"}
-                    pointer-events="none"
-                >{truncar(punto.nombre)}</text>
+                    fill={visitado
+                        ? "rgba(245,200,122,0.9)"
+                        : "rgba(160,128,96,0.5)"}
+                    pointer-events="none">{truncar(punto.nombre)}</text
+                >
 
                 <!-- Candado en no visitados (SVG vectorial de época) -->
                 {#if !visitado}
-                    <g transform="translate({punto.mapa.x + 8}, {punto.mapa.y - 12}) scale(0.4)" opacity="0.75">
-                        <rect x="2" y="5" width="12" height="9" rx="1.8" fill="#1C0E07" stroke="#A08060" stroke-width="1.2"/>
-                        <path d="M4.5 5V3.5a3.5 3.5 0 0 1 7 0V5" fill="none" stroke="#A08060" stroke-width="1.2" stroke-linecap="round"/>
-                        <circle cx="8" cy="9.5" r="1" fill="#D4A017"/>
+                    <g
+                        transform="translate({punto.mapa.x + 8}, {punto.mapa.y -
+                            12}) scale(0.4)"
+                        opacity="0.75"
+                    >
+                        <rect
+                            x="2"
+                            y="5"
+                            width="12"
+                            height="9"
+                            rx="1.8"
+                            fill="#1C0E07"
+                            stroke="#A08060"
+                            stroke-width="1.2"
+                        />
+                        <path
+                            d="M4.5 5V3.5a3.5 3.5 0 0 1 7 0V5"
+                            fill="none"
+                            stroke="#A08060"
+                            stroke-width="1.2"
+                            stroke-linecap="round"
+                        />
+                        <circle cx="8" cy="9.5" r="1" fill="#D4A017" />
                     </g>
                 {/if}
             {/each}
         </svg>
     </div>
+
+    <!-- ─── Reconocimiento Oficial y Certificado Compartible ───────── -->
+    <CertificadoHonor {puntos} />
 </section>
 
 <!-- ─ Modal / Panel de punto seleccionado ─── -->
@@ -308,9 +583,8 @@
         (s) => s.puntoId === puntoSeleccionado?.id,
     )}
     {@const aliadoDelModal = puntoSeleccionado?.voucherAliadoId
-        ? (aliados.find(
-              (a) => a.id === puntoSeleccionado?.voucherAliadoId,
-          ) ?? null)
+        ? (aliados.find((a) => a.id === puntoSeleccionado?.voucherAliadoId) ??
+          null)
         : null}
 
     {#if visitado}
@@ -332,6 +606,7 @@
             class="modal-mapa-overlay"
             on:click|self={cerrarTooltip}
             role="dialog"
+            tabindex="-1"
             aria-modal="true"
             aria-label="Información de {puntoSeleccionado.nombre}"
         >
@@ -463,10 +738,7 @@
                         </svg>
                         <span>Cómo llegar</span>
                     </button>
-                    <button
-                        class="btn-modal-cerrar"
-                        on:click={cerrarTooltip}
-                    >
+                    <button class="btn-modal-cerrar" on:click={cerrarTooltip}>
                         Cerrar
                     </button>
                 </div>
@@ -505,47 +777,56 @@
     .mapa-titulo-icono {
         width: 18px;
         height: 18px;
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
         flex-shrink: 0;
     }
     .mapa-titulo {
-        font-family: 'Cinzel', serif;
+        font-family: "Cinzel", serif;
         font-size: 1.2rem;
         font-weight: 700;
         margin: 0;
-        background: linear-gradient(135deg, var(--gold-bright, #F2C94C), var(--gold-mid, #D4A017));
+        background: linear-gradient(
+            135deg,
+            var(--gold-bright, #f2c94c),
+            var(--gold-mid, #d4a017)
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
     .mapa-contador {
         font-size: 0.8rem;
-        color: var(--text-muted, #A08060);
+        color: var(--text-muted, #a08060);
         margin: 0;
     }
-    .cnt-num  { color: var(--gold-bright, #F2C94C); font-weight: 700; }
-    .cnt-total { color: var(--text-muted, #A08060); }
+    .cnt-num {
+        color: var(--gold-bright, #f2c94c);
+        font-weight: 700;
+    }
+    .cnt-total {
+        color: var(--text-muted, #a08060);
+    }
     .cnt-completada {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
         font-weight: 600;
     }
     .cnt-trofeo-icono {
         width: 15px;
         height: 15px;
-        color: var(--gold-bright, #F2C94C);
+        color: var(--gold-bright, #f2c94c);
     }
 
     /* ─── Wrapper del mapa ───────────────────────────────────────────── */
     .mapa-wrapper {
         position: relative;
-        background: var(--bg-card, #1E1008);
-        border: 1px solid var(--border-dim, rgba(212,160,23,0.12));
+        background: var(--bg-card, #1e1008);
+        border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
         border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
     svg {
@@ -559,14 +840,21 @@
         animation: marchar-ruta 1.4s linear infinite;
     }
     @keyframes marchar-ruta {
-        from { stroke-dashoffset: 0; }
-        to   { stroke-dashoffset: -24; } /* 6 + 6 + 6 + 6 */
+        from {
+            stroke-dashoffset: 0;
+        }
+        to {
+            stroke-dashoffset: -24;
+        } /* 6 + 6 + 6 + 6 */
     }
 
     /* ─── Sendero de exploración hacia puntos pendientes ─────────────── */
     .ruta-exploracion {
         animation: marchar-exploracion 3.2s linear infinite;
-        transition: stroke 0.25s, stroke-width 0.25s, filter 0.25s;
+        transition:
+            stroke 0.25s,
+            stroke-width 0.25s,
+            filter 0.25s;
     }
     .ruta-exploracion:hover {
         stroke: rgba(242, 201, 76, 0.85);
@@ -574,8 +862,12 @@
         filter: drop-shadow(0 0 5px rgba(242, 201, 76, 0.7));
     }
     @keyframes marchar-exploracion {
-        from { stroke-dashoffset: 0; }
-        to   { stroke-dashoffset: -20; }
+        from {
+            stroke-dashoffset: 0;
+        }
+        to {
+            stroke-dashoffset: -20;
+        }
     }
 
     /* ─── Anillo de pulso SVG ────────────────────────────────────────── */
@@ -585,8 +877,14 @@
         transform-origin: center;
     }
     @keyframes pulsar-anillo {
-        0%   { r: 13; opacity: 0.8; }
-        100% { r: 24; opacity: 0;   }
+        0% {
+            r: 13;
+            opacity: 0.8;
+        }
+        100% {
+            r: 24;
+            opacity: 0;
+        }
     }
 
     /* ─── Radar de exploración para puntos pendientes ───────────────── */
@@ -597,14 +895,29 @@
         pointer-events: none;
     }
     @keyframes pulsar-radar {
-        0%   { r: 13; opacity: 0.75; stroke: rgba(242, 201, 76, 0.65); }
-        50%  { opacity: 0.35; stroke: rgba(200, 138, 88, 0.4); }
-        100% { r: 26; opacity: 0; stroke: rgba(200, 138, 88, 0); }
+        0% {
+            r: 13;
+            opacity: 0.75;
+            stroke: rgba(242, 201, 76, 0.65);
+        }
+        50% {
+            opacity: 0.35;
+            stroke: rgba(200, 138, 88, 0.4);
+        }
+        100% {
+            r: 26;
+            opacity: 0;
+            stroke: rgba(200, 138, 88, 0);
+        }
     }
 
     /* ─── Marcadores — entrada escalonada e interactividad ──────────── */
     .marcador {
-        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.2s, stroke-width 0.2s, filter 0.2s;
+        transition:
+            transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+            stroke 0.2s,
+            stroke-width 0.2s,
+            filter 0.2s;
     }
     .marcador:hover {
         transform: scale(1.18);
@@ -618,8 +931,14 @@
         transform-origin: center;
     }
     @keyframes aparecer-marcador {
-        from { transform: scale(0); opacity: 0; }
-        to   { transform: scale(1); opacity: 1; }
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
 
     /* ─── Modal para Punto No Visitado (Flexbox) ─────────────────────── */
