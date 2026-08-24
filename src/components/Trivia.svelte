@@ -25,18 +25,61 @@
         (_, i) => i < intentosRestantes,
     );
 
+    function getClaveHistorial(): string {
+        return `trivia-historial-${puntoId}`;
+    }
+
     function getClaveHoy(): string {
         const hoy = new Date().toISOString().split("T")[0];
         return `trivia-${puntoId}-${hoy}`;
     }
 
+    function obtenerDatosGuardados(): {
+        intentosRestantes?: number;
+        resultado?: "pendiente" | "correcta" | "fallida";
+        opcionesFallidas?: number[];
+        seleccionada?: number;
+    } | null {
+        try {
+            // 1. Intentar leer del historial permanente
+            const dataHistorial = localStorage.getItem(getClaveHistorial());
+            if (dataHistorial) return JSON.parse(dataHistorial);
+
+            // 2. Intentar leer de la clave de hoy
+            const dataHoy = localStorage.getItem(getClaveHoy());
+            if (dataHoy) return JSON.parse(dataHoy);
+
+            // 3. Fallback: buscar cualquier clave de este punto
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith(`trivia-${puntoId}-`)) {
+                    const val = localStorage.getItem(k);
+                    if (val) return JSON.parse(val);
+                }
+            }
+        } catch (e) {
+            console.warn("[Trivia] Error leyendo historial local:", e);
+        }
+        return null;
+    }
+
     onMount(() => {
         dialogEl?.showModal();
+
+        const datos = obtenerDatosGuardados();
 
         if (modoRevisar) {
             resultado = "correcta";
             bloqueada = true;
             yaCompletadaHoy = true;
+
+            if (datos) {
+                intentosRestantes = typeof datos.intentosRestantes === "number" ? datos.intentosRestantes : MAX_INTENTOS;
+                if (Array.isArray(datos.opcionesFallidas)) {
+                    opcionesFallidas = datos.opcionesFallidas;
+                }
+            }
+
             const idxCorrecta = opciones.findIndex((o) => o.correcta);
             if (idxCorrecta !== -1) {
                 seleccionada = idxCorrecta;
@@ -44,14 +87,12 @@
             return;
         }
 
-        const datos = localStorage.getItem(getClaveHoy());
         if (datos) {
-            const parsed = JSON.parse(datos);
-            intentosRestantes = parsed.intentosRestantes ?? MAX_INTENTOS;
-            if (Array.isArray(parsed.opcionesFallidas)) {
-                opcionesFallidas = parsed.opcionesFallidas;
+            intentosRestantes = typeof datos.intentosRestantes === "number" ? datos.intentosRestantes : MAX_INTENTOS;
+            if (Array.isArray(datos.opcionesFallidas)) {
+                opcionesFallidas = datos.opcionesFallidas;
             }
-            if (parsed.resultado === "correcta") {
+            if (datos.resultado === "correcta") {
                 resultado = "correcta";
                 bloqueada = true;
                 yaCompletadaHoy = true;
@@ -113,10 +154,15 @@
 
     function guardarEstado() {
         if (modoRevisar) return;
-        localStorage.setItem(
-            getClaveHoy(),
-            JSON.stringify({ intentosRestantes, resultado, opcionesFallidas }),
-        );
+        const payload = JSON.stringify({
+            intentosRestantes,
+            resultado,
+            opcionesFallidas,
+            seleccionada,
+            fecha: new Date().toISOString(),
+        });
+        localStorage.setItem(getClaveHistorial(), payload);
+        localStorage.setItem(getClaveHoy(), payload);
     }
 </script>
 
