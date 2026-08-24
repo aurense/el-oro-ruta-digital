@@ -1,5 +1,13 @@
 ---
 // BaseLayout.astro
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = "Pasaporte El Oro – Pueblo Mágico Minero",
+  description = "Pasaporte turístico digital de El Oro, Pueblo Mágico Minero del Estado de México. Escanea QR, escucha historias y colecciona sellos.",
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -7,10 +15,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pasaporte El Oro – Pueblo Mágico Minero</title>
-    <meta name="description" content="Pasaporte turístico digital de El Oro, Pueblo Mágico Minero del Estado de México. Escanea QR, escucha historias y colecciona sellos." />
+    <title>{title}</title>
+    <meta name="description" content={description} />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1E1008" />
+    <slot name="head" />
     <!-- Tipografía premium: Cinzel para títulos, Inter para cuerpo -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -266,27 +275,38 @@
       import { habilitarPersistenciaOffline } from "../lib/firestore-persistence";
       import { iniciarSesionAnonima, escucharAuth } from "../lib/auth";
       import { userStore } from "../stores/user";
-      import { obtenerUsuario } from "../lib/db";
+      import { escucharUsuario } from "../lib/db";
 
       // Activar Firestore offline
       habilitarPersistenciaOffline();
 
-      escucharAuth(async (uid) => {
-        console.log("[Auth] uid:", uid);
+      let desuscribirUsuario: (() => void) | null = null;
+
+      escucharAuth((uid) => {
         userStore.update((s) => ({ ...s, uid }));
+
+        if (desuscribirUsuario) {
+          desuscribirUsuario();
+          desuscribirUsuario = null;
+        }
+
         if (uid) {
-          try {
-            const datos = await obtenerUsuario(uid);
-            console.log("[Auth] Datos Firestore:", datos);
+          desuscribirUsuario = escucharUsuario(uid, (datos) => {
             userStore.update((s) => ({
               ...s,
-              perfil: datos?.perfil || null,
-              sellos: datos?.sellos || [],
-              sellosAliados: datos?.sellosAliados || {},
+              perfil: datos?.perfil || s.perfil,
+              sellos: Array.isArray(datos?.sellos)
+                ? datos.sellos.map((s: any) => ({
+                    ...s,
+                    fecha: s.fecha ? new Date(s.fecha) : new Date(),
+                  }))
+                : s.sellos,
+              sellosAliados: datos?.sellosAliados || s.sellosAliados,
+              cargando: false,
             }));
-          } catch (e) {
-            console.error("[Auth] Error al leer usuario:", e);
-          }
+          });
+        } else {
+          userStore.update((s) => ({ ...s, cargando: false }));
         }
       });
 

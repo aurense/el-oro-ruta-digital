@@ -35,13 +35,17 @@
         ? (aliados.find((a) => a.id === punto.voucherAliadoId) ?? null)
         : null;
 
+    // Determinar fase inicial síncrona sin parpadeos
+    const yaObtenidoInicial = Boolean(
+        $userStore.sellos?.some((s) => s.puntoId === punto.id),
+    );
     let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" =
-        "audio";
+        yaObtenidoInicial ? "selloGanado" : "audio";
     let mostrarDataForm = false;
     let datosPerfilGuardados = false;
     let perfilLocal = $userStore.perfil;
     let selloRecienGanado = false;
-    let faseInicializada = false;
+    let faseInicializada = yaObtenidoInicial;
     let intentosTriviaUsados = 1;
     // Variable para controlar la visibilidad de la zona principal (transición fade)
     let zonaVisible = true;
@@ -59,7 +63,7 @@
     $: sellos = $userStore.sellos;
     $: yaTieneSello = Boolean(sellos.some((s) => s.puntoId === punto.id));
 
-    // Si al hidratar el store el usuario ya tiene el sello → ir directo a selloGanado
+    // Si al actualizarse el store en tiempo real el usuario ya tiene el sello y no se había inicializado
     $: if (yaTieneSello && !faseInicializada && fase === "audio") {
         fase = "selloGanado";
         faseInicializada = true;
@@ -75,7 +79,7 @@
         }
     });
 
-    /** Cambia de fase con una breve transición de desvanecimiento */
+    /** Cambia de fase con una transición GPU ultrarrápida */
     async function cambiarFase(
         nuevaFase:
             | "audio"
@@ -85,7 +89,7 @@
             | "fallida",
     ) {
         zonaVisible = false;
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 120));
         fase = nuevaFase;
         zonaVisible = true;
     }
@@ -152,7 +156,9 @@
     ) {
         const datos = event.detail;
         try {
-            await guardarDatosUsuario(uid!, { perfil: datos });
+            guardarDatosUsuario(uid!, { perfil: datos }).catch((e) =>
+                console.warn("Sync error perfil:", e),
+            );
             userStore.update((s) => ({ ...s, perfil: datos }));
             mostrarDataForm = false;
             datosPerfilGuardados = true;
@@ -163,47 +169,40 @@
     }
 
     async function guardarSelloLocal() {
-        if (!uid || yaTieneSello) return;
+        if (yaTieneSello) return;
         selloRecienGanado = true;
-        try {
-            await guardarSello(uid, punto.id, origen, {
+
+        // 1. Actualización optimista inmediata en userStore
+        userStore.update((s) => ({
+            ...s,
+            sellos: [
+                ...s.sellos,
+                {
+                    puntoId: punto.id,
+                    fecha: new Date(),
+                    origen,
+                    intentosUsados: intentosTriviaUsados,
+                },
+            ],
+        }));
+
+        // 2. Transición y celebración inmediata
+        activarCelebracion();
+
+        // 3. Sincronización en segundo plano con Firestore (fire-and-forget)
+        if (uid) {
+            guardarSello(uid, punto.id, origen, {
                 intentosUsados: intentosTriviaUsados,
-            });
-            await guardarVisita(uid, punto.id, origen, {
+            }).catch((e) =>
+                console.warn("Guardado de sello en background diferido:", e),
+            );
+
+            guardarVisita(uid, punto.id, origen, {
                 selloObtenido: true,
                 intentosTrivia: intentosTriviaUsados,
                 audioEscuchado: true,
-            });
-            userStore.update((s) => ({
-                ...s,
-                sellos: [
-                    ...s.sellos,
-                    {
-                        puntoId: punto.id,
-                        fecha: new Date(),
-                        origen,
-                        intentosUsados: intentosTriviaUsados,
-                    },
-                ],
-            }));
-            activarCelebracion();
-        } catch (e) {
-            userStore.update((s) => ({
-                ...s,
-                sellos: [
-                    ...s.sellos,
-                    {
-                        puntoId: punto.id,
-                        fecha: new Date(),
-                        origen,
-                        intentosUsados: intentosTriviaUsados,
-                    },
-                ],
-            }));
-            activarCelebracion();
-            console.warn(
-                "El sello se guardará en el servidor cuando vuelva la conexión.",
-                e,
+            }).catch((e) =>
+                console.warn("Guardado de visita en background diferido:", e),
             );
         }
     }
@@ -521,18 +520,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px 0;
+        padding: 12px 0;
         overflow-y: auto;
-        /* Transición de opacidad entre fases */
-        transition: opacity 0.2s ease;
+        /* Transición GPU fluida a 60fps */
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        will-change: opacity, transform;
+        transform: translateZ(0);
     }
 
     .zona-visible {
         opacity: 1;
+        transform: scale(1);
     }
 
     .zona-oculta {
         opacity: 0;
+        transform: scale(0.97);
         pointer-events: none;
     }
 

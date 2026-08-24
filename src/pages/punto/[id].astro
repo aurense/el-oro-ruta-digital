@@ -16,6 +16,13 @@ if (!punto) {
 }
 ---
 
-<BaseLayout>
+<BaseLayout
+    title={`${punto.nombre} – Pasaporte El Oro`}
+    description={punto.descripcionCorta}
+>
+    <Fragment slot="head">
+        <link rel="preload" as="image" href={punto.imagenMiniatura} />
+        <link rel="preload" as="image" href={punto.insigniaURL} />
+    </Fragment>
     <PuntoPage punto={punto} origen={origen} client:load />
 </BaseLayout>

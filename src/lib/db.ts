@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot } from 'firebase/firestore';
 
 // ─── Interfaces de Datos ───────────────────────────────────────────
 export interface PerfilTurista {
@@ -39,6 +39,27 @@ export async function obtenerPunto(id: string) {
 export async function obtenerUsuario(uid: string) {
     const snap = await getDoc(doc(db, 'usuarios', uid));
     return snap.exists() ? snap.data() : null;
+}
+
+/** Escucha en tiempo real los datos del usuario con entrega inmediata desde IndexedDB */
+export function escucharUsuario(
+    uid: string,
+    callback: (datos: any) => void
+): () => void {
+    const userRef = doc(db, 'usuarios', uid);
+    return onSnapshot(
+        userRef,
+        (snap) => {
+            if (snap.exists()) {
+                callback(snap.data());
+            } else {
+                callback(null);
+            }
+        },
+        (err) => {
+            console.warn('[Firestore] Error en snapshot usuario:', err);
+        }
+    );
 }
 
 // ─── Gestión de Perfil de Turista ──────────────────────────────────
