@@ -60,18 +60,14 @@
     let indiceActivo = 0;
 
     function onCarruselScroll() {
-        if (!carruselEl) return;
-        const itemWidth =
-            carruselEl.scrollWidth /
-            (puntos.length + (obtenidos === total && total > 0 ? 1 : 0));
+        if (!carruselEl || puntos.length === 0) return;
+        const itemWidth = carruselEl.scrollWidth / puntos.length;
         indiceActivo = Math.round(carruselEl.scrollLeft / itemWidth);
     }
 
     function scrollAIndice(i: number) {
-        if (!carruselEl) return;
-        const itemWidth =
-            carruselEl.scrollWidth /
-            (puntos.length + (obtenidos === total && total > 0 ? 1 : 0));
+        if (!carruselEl || puntos.length === 0) return;
+        const itemWidth = carruselEl.scrollWidth / puntos.length;
         carruselEl.scrollTo({ left: itemWidth * i, behavior: "smooth" });
     }
 </script>
@@ -320,49 +316,6 @@
                     />
                 </div>
             {/each}
-
-            <!-- Última tarjeta: BONUS STAGE (solo si pasaporte completo) -->
-            {#if obtenidos === total && total > 0}
-                <div class="carrusel-item carrusel-bonus">
-                    <div class="bonus-card">
-                        <div class="completado-emblema-wrap">
-                            <div
-                                class="completado-aura"
-                                aria-hidden="true"
-                            ></div>
-                            <div class="completado-icono">☕</div>
-                        </div>
-                        <p class="bonus-etiqueta">BONUS STAGE</p>
-                        <h3 class="bonus-titulo">¡Completado!</h3>
-                        <div class="voucher-card">
-                            <div class="voucher-header">
-                                <span class="voucher-tipo"
-                                    >CUPÓN DE RECOMPENSA</span
-                                >
-                                <span class="voucher-sello-icono">⛏️</span>
-                            </div>
-                            <div class="voucher-cuerpo">
-                                <h4 class="voucher-premio">
-                                    ☕ Un Café de Cortesía
-                                </h4>
-                                <p class="voucher-lugar">
-                                    En <strong>«La Gran Sociedad»</strong>
-                                </p>
-                            </div>
-                            <div class="voucher-footer">
-                                <div class="voucher-status">
-                                    <span class="status-dot" aria-hidden="true"
-                                    ></span>
-                                    <span class="status-texto">Canjeable</span>
-                                </div>
-                                <span class="voucher-codigo"
-                                    >PASAPORTE-ELORO-OK</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {/if}
         </div>
 
         <!-- Dots de posición (indicadores del carrusel) -->
@@ -375,14 +328,6 @@
                     aria-label="Ir a insignia {i + 1}"
                 ></button>
             {/each}
-            {#if obtenidos === total && total > 0}
-                <button
-                    class="dot dot-bonus"
-                    class:dot-activo={indiceActivo === puntos.length}
-                    on:click={() => scrollAIndice(puntos.length)}
-                    aria-label="Bonus Stage"
-                ></button>
-            {/if}
         </div>
     </div>
 
@@ -555,22 +500,22 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 14px 16px 10px;
+        padding: 8px 14px 4px;
         flex-shrink: 0;
     }
 
     /* ─── Medallones de Época ────────────────────────────────────── */
     .rango-emblema-wrapper {
         position: relative;
-        margin-bottom: 12px;
+        margin-bottom: 6px;
         display: flex;
         justify-content: center;
         align-items: center;
     }
     .medallon-rango {
         position: relative;
-        width: 60px;
-        height: 60px;
+        width: 46px;
+        height: 46px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -584,19 +529,19 @@
         z-index: 2;
     }
     .medallon-visitante {
-        filter: drop-shadow(0 6px 14px rgba(140, 83, 43, 0.4));
+        filter: drop-shadow(0 4px 10px rgba(140, 83, 43, 0.4));
     }
     .medallon-explorador {
-        filter: drop-shadow(0 8px 20px rgba(212, 160, 23, 0.5));
+        filter: drop-shadow(0 6px 16px rgba(212, 160, 23, 0.5));
     }
     .medallon-ciudadano {
-        filter: drop-shadow(0 0 24px rgba(242, 201, 76, 0.75));
+        filter: drop-shadow(0 0 18px rgba(242, 201, 76, 0.75));
     }
 
     /* Aura giratoria dorada para la Gran Cruz de Ciudadano Aurense */
     .medallon-aura {
         position: absolute;
-        inset: -10px;
+        inset: -8px;
         border-radius: 50%;
         background: radial-gradient(
             circle,
@@ -625,15 +570,15 @@
             transform: translateY(0);
         }
         50% {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
         }
     }
 
     .pasaporte-titulo {
         font-family: "Cinzel", serif;
-        font-size: 1.35rem;
+        font-size: 1.18rem;
         font-weight: 700;
-        margin: 0 0 6px;
+        margin: 0 0 4px;
         background: linear-gradient(
             135deg,
             var(--gold-bright, #f2c94c),
@@ -648,25 +593,25 @@
     .rango-badge-pill {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 14px;
+        gap: 6px;
+        padding: 3px 12px;
         background: rgba(212, 160, 23, 0.08);
         border: 1px solid var(--border-gold, rgba(212, 160, 23, 0.3));
         border-radius: 999px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     .rango-label {
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         color: var(--text-primary, #f5e6c8);
         font-weight: 600;
         letter-spacing: 0.4px;
     }
     .rango-nivel-dot {
         color: var(--gold-mid, #d4a017);
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
     .rango-nivel {
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         color: var(--gold-bright, #f2c94c);
         font-weight: 500;
     }
@@ -674,8 +619,8 @@
     /* ─── Barra XP compacta ──────────────────────────────────────── */
     .xp-section {
         flex-shrink: 0;
-        margin: 0 16px 10px;
-        padding: 12px 16px;
+        margin: 0 16px 6px;
+        padding: 8px 14px;
         background: var(--bg-card, #1e1008);
         border: 1px solid var(--border-dim, rgba(212, 160, 23, 0.12));
         border-radius: 12px;
@@ -684,22 +629,22 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
     }
     .xp-texto {
-        font-size: 0.8rem;
+        font-size: 0.76rem;
         color: var(--text-muted, #a08060);
     }
     .xp-contador {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: var(--gold-bright, #f2c94c);
         font-variant-numeric: tabular-nums;
     }
     .xp-track {
-        height: 10px;
+        height: 8px;
         background: rgba(255, 255, 255, 0.06);
-        border-radius: 5px;
+        border-radius: 4px;
         overflow: hidden;
     }
     .xp-fill {
@@ -709,7 +654,7 @@
             var(--gold-dark, #8b6914),
             var(--gold-bright, #f2c94c)
         );
-        border-radius: 5px;
+        border-radius: 4px;
         width: 0%;
         transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 0 12px rgba(242, 201, 76, 0.5);
@@ -748,6 +693,7 @@
         min-height: 0;
         display: flex;
         flex-direction: column;
+        justify-content: center;
         overflow: hidden;
     }
 
@@ -762,7 +708,7 @@
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
         gap: 0;
-        padding: 8px 0;
+        padding: 4px 0;
         /* Ocultar scrollbar nativa */
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -772,69 +718,16 @@
     }
 
     .carrusel-item {
-        flex: 0 0 calc(100vw - 40px);
-        max-width: 300px;
+        flex: 0 0 calc(100vw - 36px);
+        max-width: 330px;
+        height: 100%;
+        max-height: min(340px, 100%);
         scroll-snap-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0 12px;
+        padding: 0 6px;
         box-sizing: border-box;
-    }
-
-    /* Bonus Stage: tarjeta especial al final del carrusel */
-    .carrusel-bonus {
-        flex: 0 0 calc(100vw - 40px);
-        max-width: 300px;
-    }
-    .bonus-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        padding: 20px 16px;
-        background: linear-gradient(165deg, #1e1008, #2a1a0a);
-        border: 1px solid rgba(242, 201, 76, 0.45);
-        border-radius: 20px;
-        width: 100%;
-        text-align: center;
-        box-shadow:
-            0 0 0 1px rgba(212, 160, 23, 0.1),
-            0 16px 40px rgba(0, 0, 0, 0.7);
-        position: relative;
-        overflow: hidden;
-    }
-    /* Destello superior en Bonus Card */
-    .bonus-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #f2c94c, transparent);
-        animation: destello-linea 3.5s infinite ease-in-out;
-    }
-    .bonus-etiqueta {
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        color: var(--gold-mid, #d4a017);
-        margin: 0;
-        background: rgba(212, 160, 23, 0.12);
-        border: 1px solid rgba(212, 160, 23, 0.3);
-        border-radius: 999px;
-        padding: 3px 10px;
-    }
-    .bonus-titulo {
-        font-family: "Cinzel", serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin: 0;
-        background: linear-gradient(135deg, #f2c94c, #d4a017);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
     }
 
     /* ─── Indicadores de posición (dots) ────────────────────────── */
@@ -843,31 +736,29 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 6px;
-        padding: 8px 0 4px;
+        gap: 8px;
+        padding: 6px 0 2px;
     }
     .dot {
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
-        background: rgba(212, 160, 23, 0.22);
+        background: rgba(212, 160, 23, 0.25);
         border: none;
         padding: 0;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         -webkit-tap-highlight-color: transparent;
     }
     .dot-activo {
-        background: var(--gold-bright, #f2c94c);
-        width: 18px;
-        border-radius: 3px;
-        box-shadow: 0 0 6px rgba(242, 201, 76, 0.5);
-    }
-    .dot-bonus {
-        background: rgba(242, 201, 76, 0.35);
-    }
-    .dot-bonus.dot-activo {
-        background: #f2c94c;
+        background: linear-gradient(
+            135deg,
+            var(--gold-bright, #f2c94c),
+            var(--gold-mid, #d4a017)
+        );
+        width: 20px;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(242, 201, 76, 0.6);
     }
 
     /* ─── Footer discreto ───────────────────────────────────────── */
@@ -875,14 +766,14 @@
         flex-shrink: 0;
         display: flex;
         justify-content: center;
-        padding: 6px 0 10px;
+        padding: 4px 0 6px;
     }
     .donation-link {
         font-family: "Inter", sans-serif;
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         color: var(--text-dim, #6b5040);
         text-decoration: none;
-        padding: 5px 14px;
+        padding: 4px 12px;
         border-radius: 999px;
         border: 1px solid rgba(212, 160, 23, 0.12);
         transition: all 0.2s;
@@ -891,263 +782,6 @@
         color: var(--gold-mid, #d4a017);
         border-color: rgba(212, 160, 23, 0.3);
         background: rgba(212, 160, 23, 0.06);
-    }
-
-    /* ─── Completado / Voucher de Recompensa ─────────────────────── */
-    .completado {
-        margin-top: 36px;
-        padding: 28px 20px 24px;
-        background: linear-gradient(
-            165deg,
-            var(--bg-card, #1e1008) 0%,
-            #2c1a0c 50%,
-            #190d06 100%
-        );
-        border: 1px solid var(--border-gold, rgba(242, 201, 76, 0.45));
-        border-radius: 22px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        position: relative;
-        overflow: hidden;
-        box-shadow:
-            0 0 0 1px rgba(212, 160, 23, 0.12),
-            0 24px 60px rgba(0, 0, 0, 0.8),
-            0 0 45px rgba(212, 160, 23, 0.2);
-        animation: entrada-voucher 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)
-            forwards;
-    }
-    @keyframes entrada-voucher {
-        from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    /* Brillo superior en la tarjeta */
-    .completado::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            var(--gold-bright, #f2c94c),
-            transparent
-        );
-        animation: destello-linea 3.5s infinite ease-in-out;
-    }
-    @keyframes destello-linea {
-        0% {
-            left: -100%;
-        }
-        50%,
-        100% {
-            left: 100%;
-        }
-    }
-
-    /* Badge superior */
-    .completado-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 14px;
-        border-radius: 9999px;
-        background: rgba(212, 160, 23, 0.14);
-        border: 1px solid rgba(212, 160, 23, 0.35);
-        color: var(--gold-bright, #f2c94c);
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-    .badge-estrella {
-        font-size: 0.75rem;
-    }
-
-    /* Emblema con aura */
-    .completado-emblema-wrap {
-        position: relative;
-        width: 64px;
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 4px 0 2px;
-    }
-    .completado-aura {
-        position: absolute;
-        inset: -6px;
-        border-radius: 50%;
-        background: radial-gradient(
-            circle,
-            rgba(242, 201, 76, 0.35) 0%,
-            transparent 70%
-        );
-        animation: latido-aura 2.5s infinite ease-in-out;
-    }
-    @keyframes latido-aura {
-        0%,
-        100% {
-            transform: scale(1);
-            opacity: 0.6;
-        }
-        50% {
-            transform: scale(1.25);
-            opacity: 1;
-        }
-    }
-    .completado-icono {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: linear-gradient(145deg, #382110, #221208);
-        border: 2px solid var(--gold-bright, #f2c94c);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        box-shadow:
-            0 0 20px rgba(242, 201, 76, 0.4),
-            inset 0 2px 6px rgba(255, 255, 255, 0.2);
-        position: relative;
-        z-index: 1;
-    }
-
-    .completado-titulo {
-        font-family: "Cinzel", serif;
-        font-size: 1.25rem;
-        font-weight: 700;
-        background: linear-gradient(
-            135deg,
-            var(--gold-bright, #f2c94c),
-            var(--gold-mid, #d4a017)
-        );
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin: 0;
-        letter-spacing: 0.5px;
-    }
-    .completado-bajada {
-        font-size: 0.84rem;
-        color: var(--text-muted, #a08060);
-        margin: 0 0 6px;
-        max-width: 320px;
-        line-height: 1.45;
-    }
-
-    /* ─── Ticket / Voucher Card ──────────────────────────────────── */
-    .voucher-card {
-        width: 100%;
-        max-width: 360px;
-        background: rgba(14, 7, 3, 0.7);
-        border: 1px dashed rgba(212, 160, 23, 0.45);
-        border-radius: 14px;
-        padding: 16px 16px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        position: relative;
-        box-sizing: border-box;
-    }
-    .voucher-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(212, 160, 23, 0.15);
-        padding-bottom: 8px;
-    }
-    .voucher-tipo {
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-        color: var(--gold-mid, #d4a017);
-    }
-    .voucher-sello-icono {
-        font-size: 0.85rem;
-    }
-
-    .voucher-cuerpo {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    .voucher-premio {
-        font-family: "Cinzel", serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--gold-bright, #f2c94c);
-        margin: 0;
-    }
-    .voucher-lugar {
-        font-size: 0.88rem;
-        color: var(--text-primary, #f5e6c8);
-        margin: 0;
-    }
-    .voucher-lugar strong {
-        color: var(--gold-bright, #f2c94c);
-    }
-    .voucher-nota {
-        font-size: 0.78rem;
-        color: var(--text-muted, #a08060);
-        margin: 4px 0 0;
-        line-height: 1.4;
-    }
-
-    .voucher-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        border-top: 1px solid rgba(212, 160, 23, 0.15);
-        padding-top: 10px;
-        margin-top: 2px;
-    }
-    .voucher-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #4caf82;
-        box-shadow: 0 0 8px #4caf82;
-        animation: pulso-status 2s infinite;
-    }
-    @keyframes pulso-status {
-        0%,
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        50% {
-            transform: scale(1.3);
-            opacity: 0.7;
-        }
-    }
-    .status-texto {
-        font-size: 0.74rem;
-        color: #4caf82;
-        font-weight: 600;
-    }
-    .voucher-codigo {
-        font-size: 0.68rem;
-        color: var(--text-muted, #a08060);
-        font-family: monospace;
-        letter-spacing: 0.5px;
     }
 
     /* ─── Overlay & Tooltip para punto no visitado ───────────────────── */
