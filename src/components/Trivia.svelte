@@ -33,6 +33,17 @@
     onMount(() => {
         dialogEl?.showModal();
 
+        if (modoRevisar) {
+            resultado = "correcta";
+            bloqueada = true;
+            yaCompletadaHoy = true;
+            const idxCorrecta = opciones.findIndex((o) => o.correcta);
+            if (idxCorrecta !== -1) {
+                seleccionada = idxCorrecta;
+            }
+            return;
+        }
+
         const datos = localStorage.getItem(getClaveHoy());
         if (datos) {
             const parsed = JSON.parse(datos);
@@ -44,15 +55,11 @@
                 resultado = "correcta";
                 bloqueada = true;
                 yaCompletadaHoy = true;
-                if (!modoRevisar) {
-                    dispatch("success");
-                }
+                dispatch("success");
             } else if (intentosRestantes <= 0) {
                 resultado = "fallida";
                 bloqueada = true;
-                if (!modoRevisar) {
-                    dispatch("failed");
-                }
+                dispatch("failed");
             }
         }
     });
@@ -62,7 +69,7 @@
     }
 
     function elegirOpcion(indice: number) {
-        if (bloqueada || resultado === "correcta" || opcionesFallidas.includes(indice)) return;
+        if (modoRevisar || bloqueada || resultado === "correcta" || opcionesFallidas.includes(indice)) return;
         seleccionada = indice;
         const correcta = opciones[indice].correcta;
 
@@ -77,7 +84,7 @@
                     vidasRestantes: intentosRestantes,
                     intentosUsados: 4 - intentosRestantes,
                 });
-            }, modoRevisar ? 1000 : 750);
+            }, 750);
         } else {
             // Sacudir el botón incorrecto y registrar en opciones fallidas
             sacudirIndice = indice;
@@ -105,6 +112,7 @@
     }
 
     function guardarEstado() {
+        if (modoRevisar) return;
         localStorage.setItem(
             getClaveHoy(),
             JSON.stringify({ intentosRestantes, resultado, opcionesFallidas }),
@@ -162,8 +170,8 @@
                     class:correcta={esCorrecta}
                     class:fallida={esFallida}
                     class:sacudir={sacudirIndice === i}
-                    class:desactivada={bloqueada && !esCorrecta}
-                    disabled={bloqueada || esFallida}
+                    class:desactivada={(bloqueada || modoRevisar) && !esCorrecta}
+                    disabled={bloqueada || modoRevisar || esFallida}
                     on:click={() => elegirOpcion(i)}
                 >
                     <span class="opcion-letra">{String.fromCharCode(65 + i)}</span>
@@ -180,10 +188,8 @@
         <!-- Mensajes de resultado -->
         {#if resultado === "correcta"}
             <p class="mensaje exito" role="status">
-                {#if yaCompletadaHoy && modoRevisar}
-                    ✨ Ya has completado este punto hoy. ¡Sello asegurado!
-                {:else if modoRevisar}
-                    ✨ ¡Respuesta correcta! Ya tienes este sello en tu pasaporte.
+                {#if modoRevisar}
+                    ✨ ¡Has completado esta trivia! Respuesta correcta fijada.
                 {:else}
                     ✨ ¡Excelente respuesta! Desbloqueando tu sello...
                 {/if}
@@ -196,6 +202,18 @@
             <p class="mensaje aviso" role="status">
                 ⚠️ Respuesta incorrecta. Te quedan {intentosRestantes} {intentosRestantes === 1 ? 'intento' : 'intentos'}.
             </p>
+        {/if}
+
+        {#if modoRevisar}
+            <div class="trivia-footer-repaso">
+                <button
+                    type="button"
+                    class="btn-gold btn-volver-sello"
+                    on:click={cerrarModal}
+                >
+                    ← Volver al sello
+                </button>
+            </div>
         {/if}
     </div>
 </dialog>
@@ -560,6 +578,22 @@
             opacity: 1;
             transform: translateY(0);
         }
+    }
+
+    /* ─── Footer en Modo Repaso ──────────────────────────────────── */
+    .trivia-footer-repaso {
+        margin-top: 4px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .btn-volver-sello {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
     }
 </style>
 

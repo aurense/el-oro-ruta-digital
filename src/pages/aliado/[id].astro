@@ -16,6 +16,13 @@ if (!aliado) {
 }
 ---
 
-<BaseLayout>
+<BaseLayout
+    title={`${aliado.nombre} – Aliado Pasaporte El Oro`}
+    description={aliado.descripcionCorta}
+>
+    <Fragment slot="head">
+        <link rel="preload" as="image" href={aliado.imagenLogo} />
+        <link rel="preload" as="image" href={aliado.insigniaURL} />
+    </Fragment>
     <AliadoPage {aliado} {origen} client:load />
 </BaseLayout>
