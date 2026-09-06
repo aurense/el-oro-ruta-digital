@@ -5,7 +5,8 @@
     import DataForm from "./DataForm.svelte";
     import VoucherCard from "./VoucherCard.svelte";
     import { aliados } from "../data/aliados";
-    import { userStore } from "../stores/user";
+    import { userStore, obtenerPasoPendientePerfil } from "../stores/user";
+    import type { DatosPerfil } from "../stores/user";
     import {
         guardarDatosUsuario,
         guardarVisita,
@@ -42,6 +43,7 @@
     let fase: "audio" | "trivia" | "triviaRevisit" | "selloGanado" | "fallida" =
         yaObtenidoInicial ? "selloGanado" : "audio";
     let mostrarDataForm = false;
+    let pasoDataForm: 1 | 2 | 3 = 1;
     let datosPerfilGuardados = false;
     let perfilLocal = $userStore.perfil;
     let selloRecienGanado = false;
@@ -130,7 +132,10 @@
             cambiarFase("selloGanado");
             return;
         }
-        if (sellos.length === 0 && !perfil) {
+
+        const pasoPendiente = obtenerPasoPendientePerfil($userStore.perfil);
+        if (pasoPendiente !== null) {
+            pasoDataForm = pasoPendiente;
             mostrarDataForm = true;
         } else {
             guardarSelloLocal();
@@ -151,18 +156,29 @@
 
     async function onPerfilGuardado(
         event: CustomEvent<{
-            pais: string;
-            estado: string;
-            municipio: string;
-            rangoEdad: string;
+            paso: 1 | 2 | 3;
+            datos: any;
         }>,
     ) {
-        const datos = event.detail;
+        const { paso, datos } = event.detail;
         try {
-            guardarDatosUsuario(uid!, { perfil: datos }).catch((e) =>
-                console.warn("Sync error perfil:", e),
-            );
-            userStore.update((s) => ({ ...s, perfil: datos }));
+            const perfilActual: DatosPerfil = $userStore.perfil || {
+                nombre: "",
+                pais: "México",
+                estado: "",
+            };
+            const nuevoPerfil: DatosPerfil = {
+                ...perfilActual,
+                ...datos,
+                actualizadoEn: new Date().toISOString(),
+            };
+
+            if (uid) {
+                guardarDatosUsuario(uid, { perfil: nuevoPerfil }).catch((e) =>
+                    console.warn("Sync error perfil:", e),
+                );
+            }
+            userStore.update((s) => ({ ...s, perfil: nuevoPerfil }));
             mostrarDataForm = false;
             datosPerfilGuardados = true;
             guardarSelloLocal();
@@ -495,8 +511,13 @@
         {/if}
     </main>
 
-    <!-- Modal de datos de perfil (overlay, no desplaza) -->
-    <DataForm visible={mostrarDataForm} on:save={onPerfilGuardado} />
+    <!-- Modal de datos de perfil por etapas (overlay, no desplaza) -->
+    <DataForm
+        visible={mostrarDataForm}
+        paso={pasoDataForm}
+        perfilExistente={$userStore.perfil}
+        on:save={onPerfilGuardado}
+    />
 </div>
 
 <style>

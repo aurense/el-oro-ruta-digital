@@ -7,10 +7,15 @@ Transforma la visita turística en una aventura inmersiva tipo videojuego RPG:
 1. **Ruta & Mapa**: El usuario explora el mapa interactivo vectorial de puntos turísticos y comercios aliados.
 2. **Escaneo QR & Audio**: Al llegar a un punto y escanear el QR físico (`?origen=qr`), escucha una narración histórica con avance bloqueado y visualizador de onda sonoro.
 3. **Trivia Desbloqueable**: Al finalizar el audio, responde una trivia con sistema de vidas, sacudida visual y retroalimentación inmediata.
-4. **Sellos Digitales, Monedas Áureas & Vouchers**: Al acertar, desbloquea una insignia para su pasaporte, acumula **40 Monedas Áureas** y **gana un voucher de cortesía/descuento** con un aliado comercial local (fomentando la derrama económica).
-5. **Comercios Aliados**: Al visitar un negocio aliado y escanear su QR, el visitante puede canjear su beneficio y ganar un sello comercial adicional (+20 Monedas Áureas).
-6. **Certificado de Honor ("Gran Ciudadano Aurense")**: Al completar todos los puntos patrimoniales de la ruta, desbloquea un diploma de honor oficial exportable en formato póster digital (Canvas 2D, 1080×1920 px) para compartir en redes sociales y WhatsApp.
-7. **Cero Fricción Offline**: Funciona al 100% sin conexión a internet tras la primera carga, con persistencia local en `localStorage` e IndexedDB y sincronización transparente con Firestore.
+4. **Onboarding Progresivo en 3 Etapas (Agnóstico a Punto o Aliado)**:
+   - **1er Sello obtenido**: Dispara el **Paso 1: Credencial de Explorador** (Nombre de explorador, País y Estado, Consentimiento).
+   - **2do Sello obtenido**: Dispara el **Paso 2: Censo del Gremio Aurense** (Municipio/Ciudad, Rango de edad, ¿Con quién nos visitas?: Solo/Pareja/Familia/Amigos).
+   - **3er Sello obtenido**: Dispara el **Paso 3: Cédula de Honor** (Tiempo de estadía en El Oro, Confirmación de nombre para el diploma, Calificación de satisfacción).
+   - **4to Sello en adelante**: Entrega directa sin interrupciones.
+5. **Sellos Digitales, Monedas Áureas & Vouchers**: Al acertar y validar el paso correspondiente, desbloquea una insignia para su pasaporte, acumula **40 Monedas Áureas** (en monumentos) o **20 Monedas Áureas** (en aliados) y **gana un voucher de cortesía/descuento**.
+6. **Comercios Aliados**: Al visitar un negocio aliado y registrar la visita presencial (o escanear su QR `?origen=qr`), se avanza de igual forma en los pasos del perfil y se acredita el beneficio comercial.
+7. **Certificado de Honor ("Gran Ciudadano Aurense")**: Al completar todos los puntos patrimoniales de la ruta, desbloquea un diploma de honor oficial exportable en formato póster digital (Canvas 2D, 1080×1920 px) personalizado con el nombre confirmado en el Paso 3.
+8. **Cero Fricción Offline**: Funciona al 100% sin conexión a internet tras la primera carga, con persistencia local en `localStorage` e IndexedDB y sincronización transparente con Firestore.
 
 ---
 
@@ -112,10 +117,14 @@ pasaporte-eloro/
 - Insignia (`StampBadge.svelte`) con `flex: 1; min-height: 0;` y `max-height: 100%`, asegurando el máximo tamaño visual posible sin desbordar el alto de la pantalla en móviles pequeños.
 - Medallón de nivel de explorador que escala con el avance de la ruta.
 
-### 3. Economía Áurea y Vouchers Comerciales (`VoucherCard.svelte` & `AliadoPage.svelte`)
+### 3. Economía Áurea y Vouchers Comerciales (`VoucherCard.svelte`, `AliadoPage.svelte`, `QRScannerModal.svelte`)
 - Cada punto turístico cuenta con un `voucherAliadoId` en `src/data/puntos.ts`.
-- Al ganar un sello turístico, se otorgan **40 Monedas Áureas** y se entrega un cupón físico estilizado con línea de puntos perforada, estado en vivo pulsante (`status-dot`), vigencia y enlace directo a `/aliado/[id]`.
-- Al visitar el comercio aliado y registrar la visita presencial (o escanear su QR), se agregan **20 Monedas Áureas** y se acredita el sello comercial en `sellosAliados`.
+- Al ganar un sello turístico, se otorgan **40 Monedas Áureas** y se entrega un cupón estilizado con línea de puntos perforada, estado en vivo pulsante (`tag-disponible`), vigencia y enlace directo al canje.
+- **Canje de Cortesía con QR en Mostrador**:
+  - **Frecuencia**: 1 beneficio por día/visita por establecimiento (controlado por `ultimoCanje.fechaDia === YYYY-MM-DD`).
+  - **Doble Vía**: El turista puede escanear el QR físico de caja con la cámara nativa (`/aliado/[id]?canje=qr`) o usar el visor integrado de la PWA (`QRScannerModal.svelte`).
+  - **Mecánica Unificada**: Un solo escaneo valida el beneficio, otorga el sello de aliado, acredita **+20 Monedas Áureas** y dispara el paso pendiente de onboarding si existe.
+  - **Comprobante Dinámico en Vivo para el Cajero**: Pantalla de alta seguridad con reloj segundero en vivo (`HH:MM:SS`) que late segundo a segundo (anti-capturas de pantalla), folio único de transacción (`#CANJE-XXXX-9999`) y registro auditable en la subcolección `canjes_aliados` de Firestore.
 
 ### 4. Certificado de Honor: Gran Ciudadano Aurense (`CertificadoHonor.svelte`)
 - Se activa cuando `sellos.length >= puntos.length`.
@@ -175,6 +184,10 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if request.auth != null;
     }
+    match /canjes_aliados/{id} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null;
+    }
     match /usuarios/{uid} {
       allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
       match /visitas/{puntoId} {
@@ -189,14 +202,16 @@ service cloud.firestore {
 
 ## 🏷️ Especificación de Códigos QR Físicos
 
-Para imprimir e instalar códigos QR en monumentos y comercios aliados, las URLs destino deben incluir el parámetro `?origen=qr`:
+Para imprimir e instalar códigos QR en monumentos y comercios aliados:
 
-- **Puntos Turísticos**:
+- **Puntos Turísticos (Patrimonio)**:
   `https://[dominio-app]/punto/{id}?origen=qr`
   - Ejemplo: `https://pasaporte.eloro.gob.mx/punto/palacio-municipal?origen=qr`
-- **Comercios Aliados**:
+- **Comercios Aliados - QR de Mostrador / Caja (Canje de Cortesía y Sello)**:
+  `https://[dominio-app]/aliado/{id}?canje=qr`
+  - Ejemplo: `https://pasaporte.eloro.gob.mx/aliado/tranvia-el-oro?canje=qr`
+- **Comercios Aliados - QR Promocional General**:
   `https://[dominio-app]/aliado/{id}?origen=qr`
-  - Ejemplo: `https://pasaporte.eloro.gob.mx/aliado/tranvia-el-oro?origen=qr`
 
 ---
 

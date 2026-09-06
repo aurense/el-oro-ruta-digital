@@ -7,16 +7,59 @@ export interface Sello {
     intentosUsados?: number;
 }
 
+export interface CanjeBeneficio {
+    fecha: string;        // ISO timestamp
+    fechaDia: string;     // YYYY-MM-DD para verificar 1 cortesía por día
+    folio: string;        // Ej. "#CANJE-MINERO-8492"
+    origen: string;       // "qr_mostrador" | "scanner_pwa" | "manual"
+}
+
 export interface SelloAliado {
     fecha: string;
     origen: string;
+    ultimoCanje?: CanjeBeneficio;
+}
+
+/**
+ * Evalúa si el usuario puede canjear el beneficio del aliado hoy (1 cortesía por día).
+ */
+export function puedeCanjearBeneficioHoy(selloAliado?: SelloAliado): boolean {
+    if (!selloAliado?.ultimoCanje?.fechaDia) return true;
+    const hoy = new Date().toISOString().split("T")[0];
+    return selloAliado.ultimoCanje.fechaDia !== hoy;
 }
 
 export interface DatosPerfil {
-    pais: string;
-    estado: string;
-    municipio: string;
-    rangoEdad: string;
+    nombre?: string;
+    pais?: string;
+    estado?: string;
+    municipio?: string;
+    rangoEdad?: string;
+    compania?: "Solo" | "Pareja" | "Familia" | "Amigos" | string;
+    estadia?: "1 día (ida y vuelta)" | "1 noche" | "Fin de semana (2-3 días)" | "Más de 3 días" | string;
+    calificacion?: number;
+    consentimiento?: boolean;
+    creadoEn?: string;
+    actualizadoEn?: string;
+}
+
+/**
+ * Determina qué paso del onboarding/registro le falta completar al usuario (1, 2, 3 o null si ya terminó).
+ */
+export function obtenerPasoPendientePerfil(perfil: DatosPerfil | null): 1 | 2 | 3 | null {
+    if (!perfil || !perfil.nombre?.trim() || !perfil.pais?.trim() || !perfil.estado?.trim()) {
+        return 1;
+    }
+    // Paso 2: Rango de edad, compañía y municipio (si México)
+    const requiereMunicipioMexico = perfil.pais === 'México' && !perfil.municipio?.trim();
+    if (!perfil.rangoEdad?.trim() || !perfil.compania?.trim() || requiereMunicipioMexico) {
+        return 2;
+    }
+    // Paso 3: Estadía
+    if (!perfil.estadia?.trim()) {
+        return 3;
+    }
+    return null;
 }
 
 export interface UserState {

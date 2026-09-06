@@ -59,6 +59,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ─── 5. Auditoría de Canjes en Caja de Comercios Aliados ───────────
+    match /canjes_aliados/{canjeId} {
+      allow create: if request.auth != null &&
+        request.resource.data.uid == request.auth.uid;
+      allow read: if (request.auth != null && resource.data.uid == request.auth.uid) || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
     // ─── Bloqueo por defecto para cualquier otra ruta no especificada ─
     match /{document=**} {
       allow read, write: if false;

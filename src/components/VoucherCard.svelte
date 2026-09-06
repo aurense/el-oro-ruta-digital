@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { AliadoData } from "../data/aliados";
+    import { userStore, puedeCanjearBeneficioHoy } from "../stores/user";
 
     export let aliado: AliadoData;
     /** "celebracion" → entrada animada, tamaño completo.
@@ -13,6 +14,10 @@
     };
 
     $: beneficio = aliado.beneficio;
+    $: stampAliado = $userStore.sellosAliados?.[aliado.id];
+    $: disponibleHoy = puedeCanjearBeneficioHoy(stampAliado);
+    $: ultimoCanje = stampAliado?.ultimoCanje;
+
     $: icono = iconoTipo[beneficio?.tipo ?? "otro"] ?? "🎁";
     $: etiqueta =
         beneficio?.tipo === "descuento"
@@ -35,20 +40,25 @@
                 return `https://maps.apple.com/?daddr=${lat},${lng}&q=${nombreEnc}`;
             }
         }
-        return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        return `https://google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    }
+
+    function formatearHora(iso: string): string {
+        try {
+            const d = new Date(iso);
+            return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        } catch {
+            return "";
+        }
     }
 </script>
 
 {#if beneficio}
-    <a
-        href={getMapUrl(aliado)}
-        target="_blank"
-        rel="noopener noreferrer"
+    <div
         class="voucher"
         class:voucher-celebracion={tipo === "celebracion"}
         class:voucher-modal={tipo === "modal"}
-        aria-label="Abrir indicaciones en mapas hacia {aliado.nombre} — {beneficio.detalle}"
-        title="Toca para abrir indicaciones en tu app de mapas"
+        class:voucher-canjeado={!disponibleHoy}
     >
         <!-- Encabezado del ticket -->
         <div class="voucher-head">
@@ -56,13 +66,18 @@
                 <span class="voucher-icono-tipo" aria-hidden="true">{icono}</span>
                 <span class="voucher-etiqueta">{etiqueta}</span>
             </div>
-            <span class="voucher-map-tag" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                Mapa
-            </span>
+            
+            <!-- Estado en vivo -->
+            {#if disponibleHoy}
+                <span class="voucher-status-tag tag-disponible">
+                    <span class="pulse-dot"></span>
+                    Disponible hoy
+                </span>
+            {:else}
+                <span class="voucher-status-tag tag-canjeado">
+                    ✓ Canjeado ({formatearHora(ultimoCanje?.fecha || "")})
+                </span>
+            {/if}
         </div>
 
         <!-- Cuerpo: aliado + beneficio + dirección -->
@@ -87,22 +102,43 @@
             <span class="perforacion-circulo perforacion-der"></span>
         </div>
 
-        <!-- Pie del ticket: vigencia + CTA -->
+        <!-- Pie del ticket: vigencia + Acciones -->
         <div class="voucher-pie">
-            <span class="voucher-vigencia">📅 {beneficio.vigencia}</span>
-            <span class="voucher-cta">
-                <svg class="cta-icono-mapa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                    <line x1="9" y1="3" x2="9" y2="18"></line>
-                    <line x1="15" y1="6" x2="15" y2="21"></line>
-                </svg>
-                Cómo llegar
-                <svg class="cta-flecha" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 8h10M9 4l4 4-4 4"/>
-                </svg>
-            </span>
+            <div class="pie-info">
+                <span class="voucher-vigencia">📅 {beneficio.vigencia} • 1 por día</span>
+                {#if !disponibleHoy && ultimoCanje?.folio}
+                    <span class="folio-canje-tag">Folio: {ultimoCanje.folio}</span>
+                {/if}
+            </div>
+
+            <div class="voucher-botones">
+                {#if disponibleHoy}
+                    <a href={`/aliado/${aliado.id}?canjear=1`} class="btn-voucher-accion btn-canjear">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+                            <rect x="7" y="7" width="10" height="10" rx="2" />
+                        </svg>
+                        <span>Canjear con QR</span>
+                    </a>
+                {/if}
+
+                <a
+                    href={getMapUrl(aliado)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn-voucher-accion btn-mapa"
+                    title="Cómo llegar en mapas"
+                >
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                        <line x1="9" y1="3" x2="9" y2="18"></line>
+                        <line x1="15" y1="6" x2="15" y2="21"></line>
+                    </svg>
+                    <span>Mapa</span>
+                </a>
+            </div>
         </div>
-    </a>
+    </div>
 {/if}
 
 <style>
@@ -112,44 +148,19 @@
         flex-direction: column;
         gap: 0;
         width: 100%;
-        max-width: 340px;
-        background: rgba(16, 8, 4, 0.9);
+        max-width: 360px;
+        background: rgba(16, 8, 4, 0.95);
         border: 1px solid rgba(212, 160, 23, 0.45);
         border-radius: 14px;
         overflow: hidden;
-        text-decoration: none;
-        color: inherit;
-        position: relative;
-        box-sizing: border-box;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-        cursor: pointer;
-    }
-    .voucher:hover {
-        transform: translateY(-3px);
-        border-color: var(--gold-bright, #f2c94c);
-        box-shadow: 0 8px 28px rgba(212, 160, 23, 0.3);
-    }
-    .voucher:active {
-        transform: translateY(-1px);
+        color: var(--text-primary, #F5E6C8);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(212, 160, 23, 0.15);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    /* Destello superior animado */
-    .voucher::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #f2c94c, transparent);
-        animation: destello 4s ease-in-out infinite;
-    }
-    @keyframes destello {
-        0%   { left: -100%; opacity: 0; }
-        10%  { opacity: 1; }
-        50%  { left: 100%; }
-        100% { left: 100%; opacity: 0; }
+    .voucher-canjeado {
+        border-color: rgba(212, 160, 23, 0.25);
+        background: rgba(14, 7, 3, 0.85);
     }
 
     /* ─── Encabezado ─────────────────────────────────────────────── */
@@ -157,221 +168,192 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        padding: 9px 13px 8px;
-        background: rgba(212, 160, 23, 0.12);
+        padding: 9px 12px 7px;
+        background: linear-gradient(90deg, rgba(212, 160, 23, 0.16) 0%, rgba(212, 160, 23, 0.04) 100%);
         border-bottom: 1px solid rgba(212, 160, 23, 0.18);
-        box-sizing: border-box;
     }
+
     .voucher-head-left {
         display: flex;
         align-items: center;
         gap: 6px;
-        min-width: 0;
     }
+
     .voucher-icono-tipo {
         font-size: 0.95rem;
-        line-height: 1;
-        flex-shrink: 0;
     }
+
     .voucher-etiqueta {
-        font-size: 0.64rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.65rem;
         font-weight: 700;
-        letter-spacing: 1.1px;
-        color: var(--gold-bright, #f2c94c);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        letter-spacing: 0.08em;
+        color: var(--gold-bright, #F2C94C);
     }
-    .voucher-map-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        font-size: 0.62rem;
+
+    .voucher-status-tag {
+        font-size: 0.68rem;
         font-weight: 700;
-        color: #120803;
-        background: linear-gradient(135deg, #FFF4B8 0%, #F2C94C 100%);
         padding: 2px 7px;
         border-radius: 999px;
-        letter-spacing: 0.4px;
-        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .tag-disponible {
+        background: rgba(76, 175, 130, 0.15);
+        border: 1px solid rgba(76, 175, 130, 0.4);
+        color: #4CAF82;
+    }
+    .tag-canjeado {
+        background: rgba(212, 160, 23, 0.12);
+        border: 1px solid rgba(212, 160, 23, 0.3);
+        color: var(--amber-light, #F5C87A);
+    }
+
+    .pulse-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #4CAF82;
+        box-shadow: 0 0 6px #4CAF82;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.8); }
     }
 
     /* ─── Cuerpo ─────────────────────────────────────────────────── */
     .voucher-cuerpo {
-        padding: 10px 14px;
+        padding: 10px 14px 8px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        box-sizing: border-box;
+        gap: 3px;
     }
+
     .voucher-aliado {
-        font-family: "Cinzel", serif;
-        font-size: 0.86rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
         font-weight: 700;
-        color: var(--text-primary, #f5e6c8);
+        color: var(--gold-bright, #F2C94C);
         margin: 0;
-        line-height: 1.3;
     }
+
     .voucher-detalle {
-        font-size: 0.8rem;
-        color: var(--text-muted, #d8c4b2);
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text-primary, #F5E6C8);
+        line-height: 1.35;
         margin: 0;
-        line-height: 1.4;
     }
+
     .voucher-direccion {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 4px;
         font-size: 0.72rem;
-        color: var(--gold-mid, #d4a017);
+        color: var(--text-muted, #A08060);
         margin: 2px 0 0;
-        line-height: 1.3;
     }
     .dir-icon {
+        color: var(--gold-mid, #D4A017);
         flex-shrink: 0;
-        margin-top: 1.5px;
-        stroke: var(--gold-mid, #d4a017);
     }
 
-    /* ─── Línea perforada (estilo ticket físico) ─────────────────── */
+    /* ─── Perforación ────────────────────────────────────────────── */
     .voucher-perforacion {
+        position: relative;
         display: flex;
         align-items: center;
-        position: relative;
-    }
-    .perforacion-circulo {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--bg-primary, #12090a);
-        border: 1px solid rgba(212, 160, 23, 0.35);
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1;
-    }
-    .perforacion-izq { margin-left: -6px; }
-    .perforacion-der { margin-right: -6px; }
-    .perforacion-linea {
-        flex: 1;
-        border-top: 2px dashed rgba(212, 160, 23, 0.3);
-        margin: 0 4px;
+        height: 16px;
+        overflow: hidden;
     }
 
-    /* ─── Pie del ticket ─────────────────────────────────────────── */
+    .perforacion-circulo {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--bg-primary, #12090A);
+        border: 1px solid rgba(212, 160, 23, 0.45);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .perforacion-izq { left: -8px; }
+    .perforacion-der { right: -8px; }
+
+    .perforacion-linea {
+        width: 100%;
+        margin: 0 12px;
+        border-bottom: 1.5px dashed rgba(212, 160, 23, 0.3);
+    }
+
+    /* ─── Pie ─────────────────────────────────────────────────────── */
     .voucher-pie {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 4px 12px 10px;
+    }
+
+    .pie-info {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 14px 10px;
-        gap: 8px;
-        box-sizing: border-box;
     }
+
     .voucher-vigencia {
-        font-size: 0.68rem;
-        color: var(--text-dim, #8f725f);
-        font-style: italic;
-        white-space: nowrap;
+        font-size: 0.7rem;
+        color: var(--text-muted, #A08060);
     }
-    .voucher-cta {
+
+    .folio-canje-tag {
+        font-family: 'Cinzel', serif;
+        font-size: 0.68rem;
+        color: var(--gold-bright, #F2C94C);
+        font-weight: 700;
+    }
+
+    .voucher-botones {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-voucher-accion {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 5px;
-        font-size: 0.74rem;
-        font-weight: 700;
-        color: var(--gold-bright, #f2c94c);
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-        transition: color 0.18s ease;
-    }
-    .voucher:hover .voucher-cta {
-        color: #fff;
-    }
-    .cta-icono-mapa {
-        width: 13px;
-        height: 13px;
-        stroke: var(--gold-bright, #f2c94c);
-    }
-    .cta-flecha {
-        width: 13px;
-        height: 13px;
-        transition: transform 0.18s ease;
-    }
-    .voucher:hover .cta-flecha {
-        transform: translateX(3px);
-    }
-
-    /* ─── Variante CELEBRACION: más grande + animación de entrada ── */
-    .voucher-celebracion {
-        max-width: 360px;
-        animation: slide-up-voucher 0.4s 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-    @keyframes slide-up-voucher {
-        from {
-            opacity: 0;
-            transform: translateY(18px) scale(0.96);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-    .voucher-celebracion .voucher-head {
-        padding: 11px 16px 9px;
-    }
-    .voucher-celebracion .voucher-etiqueta {
-        font-size: 0.68rem;
-    }
-    .voucher-celebracion .voucher-cuerpo {
-        padding: 12px 16px;
-        gap: 5px;
-    }
-    .voucher-celebracion .voucher-aliado {
-        font-size: 0.92rem;
-    }
-    .voucher-celebracion .voucher-detalle {
-        font-size: 0.84rem;
-    }
-    .voucher-celebracion .voucher-pie {
-        padding: 10px 16px 12px;
-    }
-    .voucher-celebracion .voucher-vigencia {
-        font-size: 0.72rem;
-    }
-    .voucher-celebracion .voucher-cta {
-        font-size: 0.8rem;
-    }
-
-    /* ─── Variante MODAL: compacto ───────────────────────────────── */
-    .voucher-modal {
-        max-width: 100%;
-        border-radius: 12px;
-        flex-shrink: 0;
-    }
-    .voucher-modal .voucher-head {
-        padding: 6px 12px 5px;
-    }
-    .voucher-modal .voucher-cuerpo {
         padding: 6px 12px;
-        gap: 2px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
     }
-    .voucher-modal .voucher-aliado {
-        font-size: 0.8rem;
+
+    .btn-canjear {
+        flex: 2;
+        background: linear-gradient(135deg, #F2C94C 0%, #D4A017 100%);
+        color: #1A0D00;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(212, 160, 23, 0.3);
     }
-    .voucher-modal .voucher-detalle {
-        font-size: 0.74rem;
-        line-height: 1.35;
+    .btn-canjear:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(242, 201, 76, 0.5);
     }
-    .voucher-modal .voucher-direccion {
-        font-size: 0.68rem;
+
+    .btn-mapa {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(212, 160, 23, 0.25);
+        color: var(--text-primary, #F5E6C8);
     }
-    .voucher-modal .voucher-pie {
-        padding: 5px 12px 6px;
-    }
-    .voucher-modal .voucher-vigencia {
-        font-size: 0.64rem;
-    }
-    .voucher-modal .voucher-cta {
-        font-size: 0.72rem;
+    .btn-mapa:hover {
+        background: rgba(212, 160, 23, 0.15);
+        border-color: var(--gold-mid, #D4A017);
     }
 </style>

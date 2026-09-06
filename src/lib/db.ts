@@ -3,10 +3,15 @@ import { doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot } from '
 
 // ─── Interfaces de Datos ───────────────────────────────────────────
 export interface PerfilTurista {
+    nombre?: string;
     pais: string;
     estado: string;
-    municipio: string;
-    rangoEdad: string;
+    municipio?: string;
+    rangoEdad?: string;
+    compania?: string;
+    estadia?: string;
+    calificacion?: number;
+    consentimiento?: boolean;
     creadoEn?: string;
     actualizadoEn?: string;
 }
@@ -274,5 +279,46 @@ export async function guardarVisitaAliado(
         fecha: ahora,
         origen,
     });
+}
+
+// ─── Registro de Canje Presencial de Beneficios ───────────────────
+export async function guardarCanjeAliado(
+    uid: string,
+    aliadoId: string,
+    canje: {
+        fecha: string;
+        fechaDia: string;
+        folio: string;
+        origen: string;
+    }
+) {
+    const userRef = doc(db, 'usuarios', uid);
+    const ahora = new Date().toISOString();
+
+    await setDoc(
+        userRef,
+        {
+            sellosAliados: {
+                [aliadoId]: {
+                    fecha: ahora,
+                    origen: canje.origen,
+                    ultimoCanje: canje,
+                },
+            },
+            ultimaActividad: ahora,
+        },
+        { merge: true }
+    );
+
+    try {
+        await addDoc(collection(db, 'canjes_aliados'), {
+            uid,
+            aliadoId,
+            ...canje,
+            creadoEn: ahora,
+        });
+    } catch (e) {
+        console.warn('Registro de canje diferido para sincronización online:', e);
+    }
 }
 
