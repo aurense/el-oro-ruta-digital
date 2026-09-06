@@ -329,7 +329,8 @@
         </div>
     </div>
 
-    <!-- Footer discreto -->
+    <!-- Footer discreto (Oculto temporalmente) -->
+    <!--
     <div class="footer-bar">
         <a
             href="https://ko-fi.com/aurense"
@@ -340,6 +341,7 @@
             >☕ Donativos voluntarios</a
         >
     </div>
+    -->
 </div>
 
 <!-- Modal de celebración (obtenido) o Tooltip de indicaciones (no visitado) -->
